@@ -164,8 +164,8 @@ public final class UserPanel extends JPanel {
             UserPanel.this, "Enter user name:", "Add User", JOptionPane.PLAIN_MESSAGE,
             null, null, "");
         if (s != null && s.length() > 0) {
-          clientContext.user.addUser(s);
-          UserPanel.this.getAllUsers(listModel);
+          clientContext.user.addUser(s,"");   // NOTE: empty string put as password so compiling isn't prevented
+          UserPanel.this.getAllUsers(listModel);        // This should be okay because we're not using swing anyway
         }
       }
     });

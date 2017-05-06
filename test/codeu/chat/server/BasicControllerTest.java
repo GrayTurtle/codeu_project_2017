@@ -15,6 +15,8 @@
 package codeu.chat.server;
 
 import static org.junit.Assert.*;
+
+import codeu.chat.client.ClientUser;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -89,4 +91,39 @@ public final class BasicControllerTest {
         "Check that the message has a valid reference",
         message == null);
   }
+
+  @Test
+  public void testAllowsNormalChar() {
+
+    final String alphaNumeric = "Ab0";
+    final String specialChars = "!~:.@#$%^&*()[]{}?/-=_+|<>";
+
+    assertTrue(
+            "Check that alphanumeric characters are allowed",
+            ClientUser.isValidInput(alphaNumeric)
+    );
+
+    assertTrue(
+            "Check that special characters other than ,;' and whitespace are allowed",
+            ClientUser.isValidInput(specialChars)
+    );
+  }
+
+  @Test
+  public void testPreventsBadChar() {
+
+    final String sqlInjection = ";,'";
+    final String whiteSpace = "   \n\\u000D\\u000C";
+
+    assertFalse(
+            "Checks that SQL injection characters aren't allowed through",
+            ClientUser.isValidInput(sqlInjection)
+    );
+
+    assertFalse(
+            "Checks that whitespace isn't allowed",
+            ClientUser.isValidInput(whiteSpace)
+    );
+  }
+
 }

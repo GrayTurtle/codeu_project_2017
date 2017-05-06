@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.*;
 
 import codeu.chat.common.User;
 import codeu.chat.util.Logger;
@@ -44,18 +45,20 @@ public final class ClientUser {
     this.view = view;
   }
 
-  // Validate the username string
-  static public boolean isValidName(String userName) {
-    boolean clean = true;
-    if (userName.length() == 0) {
-      clean = false;
-    } else {
 
-      // TODO: check for invalid characters
+  // Makes sure the username/password combo doesn't contain any bad chars
+  static public boolean isValidUserInput(String username, String password) {
 
-    }
-    return clean;
+    return isValidInput(username) && isValidInput(password);
   }
+
+
+  // Validate a user input string
+  static public boolean isValidInput(String userInput) {
+
+    return Pattern.matches("[a-zA-Z0-9]+&&[^/s',;]", userInput);
+  }
+
 
   public boolean hasCurrent() {
     return (current != null);
@@ -88,8 +91,8 @@ public final class ClientUser {
     printUser(current);
   }
 
-  public void addUser(String name) {
-    final boolean validInputs = isValidName(name);
+  public void addUser(String name, String password) {
+    final boolean validInputs = isValidInput(name) && isValidInput(password);
 
     final User user = (validInputs) ? controller.newUser(name) : null;
 
