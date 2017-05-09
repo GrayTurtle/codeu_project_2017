@@ -105,10 +105,15 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	@Override
 	public User getUser(Uuid userid) throws SQLException, IOException {
 		PreparedStatement getUser = conn.prepareStatement(getUserInfo);
-		getUser.setString(1, userid.toString());
+		getUser.setString(1, removeCharsInUuid(userid.toString()));
 		ResultSet user = getUser.executeQuery();
 		
-		return new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(2)));
+		if (user.next()) {
+			return new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(4)));
+			
+		}
+		System.out.println("DID NOT WORK!");
+		return null;
 	}
 	
 	@Override
@@ -160,6 +165,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	@Override
 	public void addUser(User u) throws SQLException {
 		PreparedStatement addUser = conn.prepareStatement(addUserInfo);
+		//System.out.println(removeCharsInUuid(u.id.toString()));
 		addUser.setString(1, removeCharsInUuid(u.id.toString()));
 		addUser.setString(2, u.name);
 		addUser.setString(3, "test");
@@ -243,7 +249,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 				Long creation = allUsersResponse.getLong(4);
 				
 				// Creation of uuid object from database
-				Uuid userid = Uuid.parse(uuid);
+				Uuid userid = Uuid.parse(removeCharsInUuid(uuid));
 				
 				// Creation of time object from database
 				Time time = Time.fromMs(creation);
