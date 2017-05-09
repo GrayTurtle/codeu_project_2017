@@ -37,10 +37,36 @@ public class DerbyStoreTest {
 		 }
 		 
 		 assertFalse(
-			 "Check that user has a valid reference",
-			 testUser == null);
-		 
+			 "Check that user can be added and removed successfully",
+			 testUser == null);	 
 	}
+	
+	@Test
+	public void addAndGetConversation() { 
+		final User user = controller.newUser("user");
+		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
+		Conversation testConvo = null;
+		
+		try {
+			 ds.addConversation(conversation);
+			 testConvo = ds.getConversation(conversation.id);
+		 }
+		 catch (Exception ex) {
+			 ex.printStackTrace();
+		 }
+		
+		assertFalse(
+				 "Check that conversation can be added and removed successfully",
+				 testConvo == null);	
+		
+	}
+	
+	// TODO: Add a way to get messages based on conversations and test it
+	// 		 Add a method to update the users involved for a conversation
+	
+	
+	
+	
 	
 	
 }
