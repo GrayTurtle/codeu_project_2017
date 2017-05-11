@@ -191,9 +191,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	
 	@Override
 	public void addConversation(Conversation c) throws SQLException {
-		
-		//System.out.println(c.id.toString() + "<<<<<<<<<<");
-		
+	
 		for (Uuid s : c.users) {
 			// Adding chat participants for a specific conversation to a table specifically for it.
 			PreparedStatement addChatParticipants = conn.prepareStatement(addChatParticipantsInfo);
@@ -209,28 +207,9 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		addConversation.setString(2, removeCharsInUuid(c.owner.toString()));
 		addConversation.setLong(3, c.creation.inMs());
 		addConversation.setString(4, c.title);
-		/*String firstMessageString = removeCharsInUuid((Uuid.NULL).toString());
-		String lastMessageString = removeCharsInUuid((Uuid.NULL).toString());
-		if (!c.firstMessage.equals(Uuid.NULL)) firstMessageString = removeCharsInUuid(c.firstMessage.toString());
-		if (!c.lastMessage.equals(Uuid.NULL)) lastMessageString = removeCharsInUuid(c.lastMessage.toString());*/
 		addConversation.setString(5, removeCharsInUuid(c.firstMessage.toString()));
 		addConversation.setString(6, removeCharsInUuid(c.lastMessage.toString()));
 		addConversation.executeUpdate();
-		
-		
-		/*ResultSet test = stmt.executeQuery("SELECT * FROM " + conversationTableName + " WHERE id = '" + removeCharsInUuid(c.id.toString()) + "'");
-		
-		while (test.next()) {
-			System.out.println(test.getString(1) + "<<<<<<<<");
-			System.out.println(test.getString(2) + "<<<<<<<<");
-			System.out.println(test.getLong(3) + "<<<<<<<<");
-			System.out.println(test.getString(4) + "<<<<<<<<");
-			System.out.println(test.getString(5) + "<<<<<<<<");
-			System.out.println(test.getString(6) + "<<<<<<<<");
-			System.out.println("------------------------^^^^^^^^^^^--------------");
-		}
-		
-		System.out.println("------------------------end--------------");*/
 	}
 	
 	@Override
@@ -241,10 +220,6 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		updateConversationStatement.setString(1, removeCharsInUuid(c.firstMessage.toString()));
 		updateConversationStatement.setString(2, removeCharsInUuid(c.lastMessage.toString()));
 		updateConversationStatement.setString(3, removeCharsInUuid(c.id.toString()));
-		
-		/*ResultSet test = stmt.executeQuery("SELECT * FROM " + conversationTableName + " WHERE id = '" + removeCharsInUuid(c.id.toString()) + "'");
-		
-		if (test.next()) System.out.println(test.getString(1) + " ------*------");*/
 		
 		updateConversationStatement.executeUpdate();
 	}
@@ -385,33 +360,12 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	
 	// When Uuid is converted to a string
 	// it adds characters such as opening
-	// and closing brackets. This function removes
-	// them, and decreases the different numbers in 
-	// the uuid since it could be larger than an int.
+	// and closing brackets.
 	public String removeCharsInUuid(String uuid) {
 		// Remove the characters when uuid is transformed to a string
 		uuid = uuid.replace("[", "");
 		uuid = uuid.replace("]", "");
 		uuid = uuid.replace("UUID:", "");
-		//uuid = uuid.replace(".", "");
-		
-		/*// Prevent a number larger than the max possible int
-		// from being passed into the database.
-		String[] nums = uuid.split("\\.");
-		String largestInt = String.valueOf(Integer.MAX_VALUE);
-		StringBuilder collectedUuid = new StringBuilder();
-		StringBuilder current = new StringBuilder();
-		if (nums.length > 2) {
-			for (int x = 0; x < nums[2].length(); x++) {
-				current = collectedUuid;
-				current.append(nums[2].charAt(x));
-					if (largestInt.length() - 1 > current.length()) {
-						current = collectedUuid;
-					} else break;
-			}
-			
-			uuid = nums[0] + "." + nums[1] + "." + collectedUuid.toString();
-		}*/
 		
 		return uuid;
 	}
