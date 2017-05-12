@@ -171,7 +171,7 @@ public final class Model {
 	  	// EDIT - Malik Graham
 	    // Update the conversations first and last message
 	    try {
-	    	ds.updateConversation(conversation);
+	    	ds.updateConversationMessages(conversation);
 	    }
 	    catch (Exception ex) {
 	    	ex.printStackTrace();
@@ -182,7 +182,7 @@ public final class Model {
 	  // EDIT - Malik Graham
 	  // Updating the next message for the last message
       try {
-    	  ds.updateLastMessage(message);
+    	  ds.updateNextMessage(message);
       }
       catch (Exception ex) {
       	ex.printStackTrace();
