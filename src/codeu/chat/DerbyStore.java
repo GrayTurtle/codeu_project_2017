@@ -45,7 +45,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	private final String addUserInfo = "INSERT INTO " + userTableName + " (userid, name, password, creation) values (?, ?, ?, ?)";
 	private final String addConversationInfo = "INSERT INTO " + conversationTableName + " (conversationid, owner, creation, title, firstMessage, lastMessage) " + 
 			"values (?, ?, ?, ?, ?, ?)";
-	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (messageid, previous, creation, author, content, nextMessage) " + 
+	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (messageid, previousMessage, creation, author, content, nextMessage) " + 
 	"values (?, ?, ?, ?, ?, ?)";
 	private final String addChatParticipantsInfo = "INSERT INTO " + chatParticipantsTableName + " (conversationid, userid) values (?, ?)";
 
@@ -91,7 +91,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			
 			// Create the message table
 			stmt.execute("CREATE TABLE " + messageTableName + " (messageid varchar(255),"
-					 + "previous varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255), PRIMARY KEY (messageid))");
+					 + "previousMessage varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255), PRIMARY KEY (messageid))");
 			
 			stmt.execute("CREATE TABLE " + chatParticipantsTableName + " (conversationid varchar(255), userid varchar(255))");
 			
@@ -110,7 +110,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		ResultSet user = getUser.executeQuery();
 		
 		if (user.next()) {
-			return new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(4)));
+			return new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation")));
 			
 		}
 		return null;
@@ -129,16 +129,16 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		HashSet<Uuid> usersInvolved = new HashSet<Uuid>();
 		
 		while (users.next()) {
-			usersInvolved.add(Uuid.parse(users.getString(1)));
+			usersInvolved.add(Uuid.parse(users.getString("userid")));
 		}
 
 		if (conversation.next()) {
-			Uuid id = Uuid.parse(conversation.getString(1));
-			Uuid owner = Uuid.parse(conversation.getString(2));
-			Time creation = Time.fromMs(conversation.getLong(3));
-			String title = conversation.getString(4);
-			Uuid firstMessage = Uuid.parse(conversation.getString(5));
-			Uuid lastMessage = Uuid.parse(conversation.getString(6));	
+			Uuid id = Uuid.parse(conversation.getString("conversationid"));
+			Uuid owner = Uuid.parse(conversation.getString("owner"));
+			Time creation = Time.fromMs(conversation.getLong("creation"));
+			String title = conversation.getString("title");
+			Uuid firstMessage = Uuid.parse(conversation.getString("firstMessage"));
+			Uuid lastMessage = Uuid.parse(conversation.getString("lastMessage"));	
 			return new Conversation(id, owner, creation, title, usersInvolved, firstMessage, lastMessage);
 		}
 		
@@ -162,7 +162,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		checkValidUserTest.setString(2, password);
 		ResultSet user = checkValidUserTest.executeQuery();
 		
-		return (user.next()) ? new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(4))) : null;
+		return (user.next()) ? new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation"))) : null;
 	}
 	
 	@Override
@@ -243,7 +243,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		ResultSet message = getMessageStatement.executeQuery();
 		
 		if (message.next()) {
-			return new Message(Uuid.parse(message.getString(1)), Uuid.parse(message.getString(6)), Uuid.parse(message.getString(2)), Time.fromMs(message.getLong(3)), Uuid.parse(message.getString(4)), message.getString(5));
+			return new Message(Uuid.parse(message.getString("messageid")), Uuid.parse(message.getString("nextMessage")), Uuid.parse(message.getString("previousMessage")), Time.fromMs(message.getLong("creation")), Uuid.parse(message.getString("author")), message.getString("content"));
 		}
 		return null;
 	}
@@ -259,9 +259,9 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			while (allUsersResponse.next()) {
 				
 				
-				String uuid = allUsersResponse.getString(1);
-				String name = allUsersResponse.getString(2);
-				Long creation = allUsersResponse.getLong(4);
+				String uuid = allUsersResponse.getString("userid");
+				String name = allUsersResponse.getString("name");
+				Long creation = allUsersResponse.getLong("creation");
 				
 				// Creation of uuid object from database
 				Uuid userid = Uuid.parse(uuid);
@@ -296,23 +296,22 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			
 			while (allConversationsResponse.next()) {
 				
-				Uuid conversationid = Uuid.parse(removeCharsInUuid(allConversationsResponse.getString(1)));
+				Uuid conversationid = Uuid.parse(removeCharsInUuid(allConversationsResponse.getString("conversationid")));
 				
 				// Retrieve the users that are a part of the conversation
 				ResultSet chatParticipants = partipantsStatement.executeQuery("SELECT userid FROM " + chatParticipantsTableName + " WHERE conversationid = '" + allConversationsResponse.getString(1) + "'");
 				
 				// Iterate over the participants and them to the hashset
 				while (chatParticipants.next()) {
-					ownersUuid.add(Uuid.parse(chatParticipants.getString(1)));
+					ownersUuid.add(Uuid.parse(chatParticipants.getString("userid")));
 				}
 				
-				Uuid ownerUuid = Uuid.parse(allConversationsResponse.getString(2));
-				Time creation = Time.fromMs(allConversationsResponse.getLong(3));
+				Uuid ownerUuid = Uuid.parse(allConversationsResponse.getString("owner"));
+				Time creation = Time.fromMs(allConversationsResponse.getLong("creation"));
 
-				String title = allConversationsResponse.getString(4);
-				//String owners = allConversationsResponse.getString(5);
-				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString(5));
-				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString(6));
+				String title = allConversationsResponse.getString("title");
+				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString("firstMessage"));
+				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString("lastMessage"));
 				
 				Conversation c = new Conversation(conversationid, ownerUuid, creation, title, ownersUuid, firstMessage, lastMessage);
 				allConversations.insert(conversationid, c);
@@ -336,12 +335,12 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 
 			while (allMessagesResponse.next()) {
 				
-				Uuid messageid = Uuid.parse(allMessagesResponse.getString(1));
-				Uuid previous = Uuid.parse(allMessagesResponse.getString(2));
-				Time creation = Time.fromMs(allMessagesResponse.getLong(3));
-				Uuid author = Uuid.parse(allMessagesResponse.getString(4));
-				String content = allMessagesResponse.getString(5);
-				Uuid next = Uuid.parse(allMessagesResponse.getString(6));
+				Uuid messageid = Uuid.parse(allMessagesResponse.getString("messageid"));
+				Uuid previous = Uuid.parse(allMessagesResponse.getString("previousMessage"));
+				Time creation = Time.fromMs(allMessagesResponse.getLong("creation"));
+				Uuid author = Uuid.parse(allMessagesResponse.getString("author"));
+				String content = allMessagesResponse.getString("content");
+				Uuid next = Uuid.parse(allMessagesResponse.getString("nextMessage"));
 				
 				Message m = new Message(messageid, next, previous, creation, author, content);
 				allMessages.insert(messageid, m);
