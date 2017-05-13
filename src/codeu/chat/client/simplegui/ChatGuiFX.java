@@ -7,6 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.scene.text.*;
 import javafx.collections.*;
@@ -27,12 +29,18 @@ public final class ChatGuiFX extends Application {
     private static final String SIGNUP_ERROR_MESSAGE = "Sorry, that username already exists. Please choose a different one.";
     private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
 
+
+    // both page vars
+    private ClientContext clientContext;
+
+
     // login page vars
     private Stage thestage;                         // Holds the scene that user is currently viewing
     private Scene signInScene, mainScene;           // Scenes to hold all the elements for each page
     private TextField userInput;
     private PasswordField passInput;                // Takes input for username and password
-    private ClientContext clientContext;            //
+    private Label errorLabel;                       // Displays error messages
+
 
     // main page vars
     private HBox hboxClient;
@@ -97,13 +105,20 @@ public final class ChatGuiFX extends Application {
         passHBox.setAlignment(Pos.CENTER);
         buttonBox.setAlignment(Pos.CENTER);
 
-        Label signInLabel = new Label("Sign-in screen");       // Title for sign-in page
+
+        // Set up labels
+        Label signInLabel = new Label("Sign-in screen");
         Label userLabel = new Label("Username:");
         Label passLabel = new Label("Password:");
-        signInLabel.setFont(Font.font(20));                         // Set style
+        errorLabel = new Label("");
+
+        signInLabel.setFont(Font.font(20));
         userLabel.setFont(Font.font(15));
         passLabel.setFont(Font.font(15));
+        errorLabel.setFont(Font.font(15));
+        errorLabel.setTextFill(Color.web("#FF0000"));
 
+        // Set up buttons
         Button signInButton = new Button("Sign in");
         Button signUpButton = new Button("Sign up");
         signInButton.setMinWidth(buttonBox.getPrefWidth());
@@ -111,11 +126,10 @@ public final class ChatGuiFX extends Application {
         signInButton.setOnAction((event)-> signInButtonClicked(event));       // Initialize event handlers
         signUpButton.setOnAction((event) -> signUpButtonClicked(event));      //
 
-
-
+        // Set up password fields
         userInput = new TextField();
-        passInput = new PasswordField();                        // Set up password fields
-        userInput.setPromptText("Username");                    // TODO: figure out if have the prompt text is overkill
+        passInput = new PasswordField();
+        userInput.setPromptText("Username");
         passInput.setPromptText("Password");
         userInput.setAlignment(Pos.CENTER);
         passInput.setAlignment(Pos.CENTER);
@@ -138,7 +152,8 @@ public final class ChatGuiFX extends Application {
         inputMasterBox.getChildren().add(buttonBox);     // Add that VBox and buttons to the inputMasterBox
 
         signInPane.setTop(signInLabelPane);
-        signInPane.setCenter(inputMasterBox);                 // Add label and input box to the pane
+        signInPane.setCenter(inputMasterBox);                 // Add labels and input box to the pane
+        signInPane.setBottom(errorLabel);
 
 
         signInScene = new Scene(signInPane, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -220,14 +235,14 @@ public final class ChatGuiFX extends Application {
         String username = userInput.getText();
         String password = passInput.getText();
 
-        if (ClientUser.isValidInput(username)) {
+        if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
 
-            clientContext.user.signInUser(username, password);
+            //clientContext.user.signInUser(username, password);
             thestage.setScene(mainScene);
         }
         else {
 
-            //TODO: show something on the screen that tells user to user different characters
+            errorLabel.setText(BADCHAR_ERROR_MESSAGE);
         }
     }
 
@@ -236,8 +251,12 @@ public final class ChatGuiFX extends Application {
         String username = userInput.getText();
         String password = passInput.getText();
 
-        //TODO: add in some controller logic here
-
-        thestage.setScene(mainScene);
+        if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
+            //more logic here
+            thestage.setScene(mainScene);
+        }
+        else {
+            errorLabel.setText(BADCHAR_ERROR_MESSAGE);
+        }
     }
 }
