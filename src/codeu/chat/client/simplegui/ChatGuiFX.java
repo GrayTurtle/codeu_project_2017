@@ -23,6 +23,9 @@ public final class ChatGuiFX extends Application {
 
     private static final double WINDOW_WIDTH = 1000;
     private static final double WINDOW_HEIGHT = 500;
+    private static final String SIGNIN_ERROR_MESSAGE = "Your username or password does not match. Have you signed up yet?";
+    private static final String SIGNUP_ERROR_MESSAGE = "Sorry, that username already exists. Please choose a different one.";
+    private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
 
     private Stage thestage;                         // Holds the scene that user is currently viewing
     private Scene signInScene, mainScene;           // Scenes to hold all the elements for each page
