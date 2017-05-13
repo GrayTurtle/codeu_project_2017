@@ -16,7 +16,7 @@ public interface DerbyDatabaseInteractions {
 	
 	public void addUser(User u) throws SQLException;
 	
-	public User userLogin(String email, String password)  throws SQLException, IOException;
+	public User userLogin(String name, String password)  throws SQLException, IOException;
 	
 	public boolean checkUsernameExists(String name) throws SQLException;
 	
@@ -27,13 +27,15 @@ public interface DerbyDatabaseInteractions {
 	
 	public void addConversation(Conversation c) throws SQLException;
 	
-	public void updateConversation(Conversation c) throws SQLException;
+	public void updateConversationMessages(Conversation c) throws SQLException;
 	
-	public void updateLastMessage(Message m) throws SQLException;
+	public void updateNextMessage(Message m) throws SQLException;
 	
 	// MESSAGE
 	public Store<Uuid, Message> getAllMessages();
 	
 	public void addMessage(Message m) throws SQLException;
+	
+	public Message getMessage(Uuid messageid) throws SQLException, IOException;
 
 }
