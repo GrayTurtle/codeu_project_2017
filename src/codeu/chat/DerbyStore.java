@@ -35,23 +35,24 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	private final String messageTableName = "message";
 	private final String chatParticipantsTableName = "chatParticipants";
 	
-	private final String getUserInfo = "SELECT * FROM " + userTableName +  " WHERE id = ?";
-	private final String getConversationInfo = "SELECT * FROM " + userTableName +  " WHERE id = ?";
-	private final String getUsersInvolved = "SELCT * FROM " + chatParticipantsTableName + " WHERE id = ?" ;
+	private final String getUserInfo = "SELECT * FROM " + userTableName +  " WHERE userid = ?";
+	private final String getConversationInfo = "SELECT * FROM " + conversationTableName +  " WHERE conversationid = ?";
+	private final String getUsersInvolved = "SELECT * FROM " + chatParticipantsTableName + " WHERE conversationid = ?" ;
 	
 	private final String checkUsername = "SELECT * FROM " + userTableName + " WHERE name = ?";
 	private final String checkValidUser = "SELECT * FROM " + userTableName + " WHERE name = ? AND password = ?";
 	
-	private final String addUserInfo = "INSERT INTO " + userTableName + " (id, name, password, creation) values (?, ?, ?, ?)";
-	private final String addConversationInfo = "INSERT INTO " + conversationTableName + " (id, owner, creation, title, firstMessage, lastMessage) " + 
+	private final String addUserInfo = "INSERT INTO " + userTableName + " (userid, name, password, creation) values (?, ?, ?, ?)";
+	private final String addConversationInfo = "INSERT INTO " + conversationTableName + " (conversationid, owner, creation, title, firstMessage, lastMessage) " + 
 			"values (?, ?, ?, ?, ?, ?)";
-	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (id, previous, creation, author, content, nextMessage) " + 
+	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (messageid, previousMessage, creation, author, content, nextMessage) " + 
 	"values (?, ?, ?, ?, ?, ?)";
 	private final String addChatParticipantsInfo = "INSERT INTO " + chatParticipantsTableName + " (conversationid, userid) values (?, ?)";
 
 	
-	private final String updateLastMessageById = "UPDATE " + messageTableName + " SET nextMessage = ? WHERE id = ?";
-	private final String updateConversationById = "UPDATE " + conversationTableName + " SET firstMessage = ?, lastMessage = ? WHERE id = ?";
+	private final String updateNextMessageById = "UPDATE " + messageTableName + " SET nextMessage = ? WHERE messageid = ?";
+	private final String updateConversationById = "UPDATE " + conversationTableName + " SET firstMessage = ?, lastMessage = ? WHERE conversationid = ?";
+	private final String getMessageById = "SELECT * FROM " + messageTableName + " WHERE messageid = ?";
 	
 	private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
 	
@@ -81,18 +82,18 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			stmt = conn.createStatement();
 			
 			// Create the chat user table
-			stmt.execute("CREATE TABLE " + userTableName + "(id varchar(255), name varchar(255), password varchar(255), creation BIGINT)");
+			stmt.execute("CREATE TABLE " + userTableName + " (userid varchar(255), name varchar(255), password varchar(255), creation BIGINT, PRIMARY KEY (userid))");
 			
 			// Create the conversations table
-			stmt.execute("CREATE TABLE " + conversationTableName + "(id varchar(255), "
-					+ "owner varchar(255), creation BIGINT, title varchar(255), users varchar(255), firstMessage varchar(255)," +
-			"lastMessage varchar(255))");
+			stmt.execute("CREATE TABLE " + conversationTableName + " (conversationid varchar(255), "
+					+ "owner varchar(255), creation BIGINT, title varchar(255), firstMessage varchar(255)," +
+			" lastMessage varchar(255), PRIMARY KEY (conversationid))");
 			
 			// Create the message table
-			stmt.execute("CREATE TABLE " + messageTableName + "(id varchar(255),"
-					 + "previous varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255))");
+			stmt.execute("CREATE TABLE " + messageTableName + " (messageid varchar(255),"
+					 + "previousMessage varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255), PRIMARY KEY (messageid))");
 			
-			stmt.execute("CREATE TABLE " + chatParticipantsTableName + "(conversationid varchar(255), userid varchar(255))");
+			stmt.execute("CREATE TABLE " + chatParticipantsTableName + " (conversationid varchar(255), userid varchar(255))");
 			
 			// Give confirmation of execution.
 			LOG.info("Tables do not exist. Table creation executed.");
@@ -105,36 +106,43 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	@Override
 	public User getUser(Uuid userid) throws SQLException, IOException {
 		PreparedStatement getUser = conn.prepareStatement(getUserInfo);
-		getUser.setString(1, userid.toString());
+		getUser.setString(1, removeCharsInUuid(userid.toString()));
 		ResultSet user = getUser.executeQuery();
 		
-		return new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(2)));
+		if (user.next()) {
+			return new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation")));
+			
+		}
+		return null;
 	}
 	
 	@Override
 	public Conversation getConversation(Uuid conversationid) throws SQLException, IOException {
 		PreparedStatement getConversation = conn.prepareStatement(getConversationInfo);
-		getConversation.setString(1, conversationid.toString());
+		getConversation.setString(1, removeCharsInUuid(conversationid.toString()));
 		ResultSet conversation = getConversation.executeQuery();
 		
 		PreparedStatement getUsersForConversation = conn.prepareStatement(getUsersInvolved);
-		getUsersForConversation.setString(1, conversationid.toString());
+		getUsersForConversation.setString(1, removeCharsInUuid(conversationid.toString()));
 		ResultSet users = getUsersForConversation.executeQuery();
 		
 		HashSet<Uuid> usersInvolved = new HashSet<Uuid>();
 		
 		while (users.next()) {
-			usersInvolved.add(Uuid.parse(users.getString(1)));
+			usersInvolved.add(Uuid.parse(users.getString("userid")));
+		}
+
+		if (conversation.next()) {
+			Uuid id = Uuid.parse(conversation.getString("conversationid"));
+			Uuid owner = Uuid.parse(conversation.getString("owner"));
+			Time creation = Time.fromMs(conversation.getLong("creation"));
+			String title = conversation.getString("title");
+			Uuid firstMessage = Uuid.parse(conversation.getString("firstMessage"));
+			Uuid lastMessage = Uuid.parse(conversation.getString("lastMessage"));	
+			return new Conversation(id, owner, creation, title, usersInvolved, firstMessage, lastMessage);
 		}
 		
-		Uuid id = Uuid.parse(conversation.getString(1));
-		Uuid owner = Uuid.parse(conversation.getString(2));
-		Time creation = Time.fromMs(conversation.getLong(3));
-		String title = conversation.getString(4);
-		Uuid firstMessage = Uuid.parse(conversation.getString(5));
-		Uuid lastMessage = Uuid.parse(conversation.getString(6));
-				
-		return new Conversation(id, owner, creation, title, usersInvolved, firstMessage, lastMessage);
+	return null;
 	}
 	
 	
@@ -144,7 +152,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		checkUserTest.setString(1, name);
 		ResultSet user = checkUserTest.executeQuery();
 		
-		return user == null;
+		return user.next();
 	}
 	
 	@Override
@@ -154,7 +162,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		checkValidUserTest.setString(2, password);
 		ResultSet user = checkValidUserTest.executeQuery();
 		
-		return (user != null) ? new User(Uuid.parse(user.getString(1)), user.getString(2), Time.fromMs(user.getLong(3))) : null;
+		return (user.next()) ? new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation"))) : null;
 	}
 	
 	@Override
@@ -183,7 +191,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	
 	@Override
 	public void addConversation(Conversation c) throws SQLException {
-		
+	
 		for (Uuid s : c.users) {
 			// Adding chat participants for a specific conversation to a table specifically for it.
 			PreparedStatement addChatParticipants = conn.prepareStatement(addChatParticipantsInfo);
@@ -202,11 +210,10 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		addConversation.setString(5, removeCharsInUuid(c.firstMessage.toString()));
 		addConversation.setString(6, removeCharsInUuid(c.lastMessage.toString()));
 		addConversation.executeUpdate();
-		
 	}
 	
 	@Override
-	public void updateConversation(Conversation c) throws SQLException {
+	public void updateConversationMessages(Conversation c) throws SQLException {
 		
 		PreparedStatement updateConversationStatement = conn.prepareStatement(updateConversationById);
 		
@@ -215,17 +222,30 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		updateConversationStatement.setString(3, removeCharsInUuid(c.id.toString()));
 		
 		updateConversationStatement.executeUpdate();
-		
 	}
 	
 	@Override
-	public void updateLastMessage(Message m) throws SQLException {
-		PreparedStatement updateMessageStatement = conn.prepareStatement(updateLastMessageById);
+	public void updateNextMessage(Message m) throws SQLException {
+		PreparedStatement updateMessageStatement = conn.prepareStatement(updateNextMessageById);
 		
 		updateMessageStatement.setString(1, removeCharsInUuid(m.next.toString()));
 		updateMessageStatement.setString(2, removeCharsInUuid(m.id.toString()));
 		
 		updateMessageStatement.executeUpdate();
+	}
+	
+	@Override
+	public Message getMessage(Uuid messageid) throws SQLException, IOException {
+		PreparedStatement getMessageStatement = conn.prepareStatement(getMessageById); 
+		
+		getMessageStatement.setString(1, removeCharsInUuid(messageid.toString()));
+		
+		ResultSet message = getMessageStatement.executeQuery();
+		
+		if (message.next()) {
+			return new Message(Uuid.parse(message.getString("messageid")), Uuid.parse(message.getString("nextMessage")), Uuid.parse(message.getString("previousMessage")), Time.fromMs(message.getLong("creation")), Uuid.parse(message.getString("author")), message.getString("content"));
+		}
+		return null;
 	}
 	
 	@Override
@@ -238,9 +258,10 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			
 			while (allUsersResponse.next()) {
 				
-				String uuid = allUsersResponse.getString(1);
-				String name = allUsersResponse.getString(2);
-				Long creation = allUsersResponse.getLong(4);
+				
+				String uuid = allUsersResponse.getString("userid");
+				String name = allUsersResponse.getString("name");
+				Long creation = allUsersResponse.getLong("creation");
 				
 				// Creation of uuid object from database
 				Uuid userid = Uuid.parse(uuid);
@@ -275,23 +296,22 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 			
 			while (allConversationsResponse.next()) {
 				
-				Uuid conversationid = Uuid.parse(removeCharsInUuid(allConversationsResponse.getString(1)));
+				Uuid conversationid = Uuid.parse(removeCharsInUuid(allConversationsResponse.getString("conversationid")));
 				
 				// Retrieve the users that are a part of the conversation
 				ResultSet chatParticipants = partipantsStatement.executeQuery("SELECT userid FROM " + chatParticipantsTableName + " WHERE conversationid = '" + allConversationsResponse.getString(1) + "'");
 				
 				// Iterate over the participants and them to the hashset
 				while (chatParticipants.next()) {
-					ownersUuid.add(Uuid.parse(chatParticipants.getString(1)));
+					ownersUuid.add(Uuid.parse(chatParticipants.getString("userid")));
 				}
 				
-				Uuid ownerUuid = Uuid.parse(allConversationsResponse.getString(2));
-				Time creation = Time.fromMs(allConversationsResponse.getLong(3));
+				Uuid ownerUuid = Uuid.parse(allConversationsResponse.getString("owner"));
+				Time creation = Time.fromMs(allConversationsResponse.getLong("creation"));
 
-				String title = allConversationsResponse.getString(4);
-				String owners = allConversationsResponse.getString(5);
-				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString(6));
-				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString(7));
+				String title = allConversationsResponse.getString("title");
+				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString("firstMessage"));
+				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString("lastMessage"));
 				
 				Conversation c = new Conversation(conversationid, ownerUuid, creation, title, ownersUuid, firstMessage, lastMessage);
 				allConversations.insert(conversationid, c);
@@ -315,12 +335,12 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 
 			while (allMessagesResponse.next()) {
 				
-				Uuid messageid = Uuid.parse(allMessagesResponse.getString(1));
-				Uuid previous = Uuid.parse(allMessagesResponse.getString(2));
-				Time creation = Time.fromMs(allMessagesResponse.getLong(3));
-				Uuid author = Uuid.parse(allMessagesResponse.getString(4));
-				String content = allMessagesResponse.getString(5);
-				Uuid next = Uuid.parse(allMessagesResponse.getString(6));
+				Uuid messageid = Uuid.parse(allMessagesResponse.getString("messageid"));
+				Uuid previous = Uuid.parse(allMessagesResponse.getString("previousMessage"));
+				Time creation = Time.fromMs(allMessagesResponse.getLong("creation"));
+				Uuid author = Uuid.parse(allMessagesResponse.getString("author"));
+				String content = allMessagesResponse.getString("content");
+				Uuid next = Uuid.parse(allMessagesResponse.getString("nextMessage"));
 				
 				Message m = new Message(messageid, next, previous, creation, author, content);
 				allMessages.insert(messageid, m);
@@ -335,34 +355,16 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		return allMessages;
 	}
 	
+
+	
 	// When Uuid is converted to a string
 	// it adds characters such as opening
-	// and closing brackets. This function removes
-	// them, and decreases the different numbers in 
-	// the uuid since it could be larger than an int.
+	// and closing brackets.
 	public String removeCharsInUuid(String uuid) {
 		// Remove the characters when uuid is transformed to a string
 		uuid = uuid.replace("[", "");
 		uuid = uuid.replace("]", "");
 		uuid = uuid.replace("UUID:", "");
-		
-		// Prevent a number larger than the max possible int
-		// from being passed into the database.
-		String[] nums = uuid.split("\\.");
-		String largestInt = String.valueOf(Integer.MAX_VALUE);
-		StringBuilder collectedUuid = new StringBuilder();
-		StringBuilder current = new StringBuilder();
-		if (nums.length > 2) {
-			for (int x = 0; x < nums[2].length(); x++) {
-				current = collectedUuid;
-				current.append(nums[2].charAt(x));
-					if (largestInt.length() - 1 > current.length()) {
-						current = collectedUuid;
-					} else break;
-			}
-			
-			uuid = nums[0] + "." + nums[1] + "." + collectedUuid.toString();
-		}
 		
 		return uuid;
 	}
