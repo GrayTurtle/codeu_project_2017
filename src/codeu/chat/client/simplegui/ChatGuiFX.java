@@ -26,7 +26,6 @@ public final class ChatGuiFX extends Application {
 
     private Stage thestage;                         // Holds the scene that user is currently viewing
     private Scene signInScene, mainScene;           // Scenes to hold all the elements for each page
-    private Button signInButton;
     private TextField userInput;
     private PasswordField passInput;                // Takes input for username and password
     private ClientContext clientContext;            //
@@ -64,6 +63,8 @@ public final class ChatGuiFX extends Application {
         VBox inputVBox = new VBox();
         HBox usernameHBox = new HBox();
         HBox passHBox = new HBox();
+        VBox buttonBox = new VBox();
+        buttonBox.setPrefWidth(80);
 
         // Set Pane alignments
 
@@ -72,6 +73,7 @@ public final class ChatGuiFX extends Application {
         inputVBox.setAlignment(Pos.CENTER);
         usernameHBox.setAlignment(Pos.CENTER);
         passHBox.setAlignment(Pos.CENTER);
+        buttonBox.setAlignment(Pos.CENTER);
 
         Label signInLabel = new Label("Sign-in screen");       // Title for sign-in page
         Label userLabel = new Label("Username:");
@@ -80,8 +82,13 @@ public final class ChatGuiFX extends Application {
         userLabel.setFont(Font.font(15));
         passLabel.setFont(Font.font(15));
 
-        signInButton = new Button("Sign in");                      // Initialize sign in button
-        signInButton.setOnAction((event)-> signInButtonClicked(event));       // Initialize its event handler
+        Button signInButton = new Button("Sign in");
+        Button signUpButton = new Button("Sign up");
+        signInButton.setMinWidth(buttonBox.getPrefWidth());
+        signUpButton.setMinWidth(buttonBox.getPrefWidth());
+        signInButton.setOnAction((event)-> signInButtonClicked(event));       // Initialize event handlers
+        signUpButton.setOnAction((event) -> signUpButtonClicked(event));      //
+
 
 
         userInput = new TextField();
@@ -102,8 +109,11 @@ public final class ChatGuiFX extends Application {
         inputVBox.getChildren().add(usernameHBox);
         inputVBox.getChildren().add(passHBox);              // Add those HBoxes to a VBox to stack them on top of each other
 
+        buttonBox.getChildren().add(signInButton);
+        buttonBox.getChildren().add(signUpButton);          // Add buttons to a VBox to one on top of the other
+
         inputMasterBox.getChildren().add(inputVBox);
-        inputMasterBox.getChildren().add(signInButton);     // Add that VBox and the signInButton to the inputMasterBox
+        inputMasterBox.getChildren().add(buttonBox);     // Add that VBox and buttons to the inputMasterBox
 
         signInPane.setTop(signInLabelPane);
         signInPane.setCenter(inputMasterBox);                 // Add label and input box to the pane
@@ -196,5 +206,15 @@ public final class ChatGuiFX extends Application {
 
             //TODO: show something on the screen that tells user to user different characters
         }
+    }
+
+    private void signUpButtonClicked(ActionEvent e) {
+
+        String username = userInput.getText();
+        String password = passInput.getText();
+
+        //TODO: add in some controller logic here
+
+        thestage.setScene(mainScene);
     }
 }
