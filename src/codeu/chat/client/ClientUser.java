@@ -53,7 +53,7 @@ public final class ClientUser {
    */
   public static boolean isValidInput(String userInput) {
 
-    boolean validInput = Pattern.matches("[a-zA-Z0-9]", userInput);
+    boolean validInput = Pattern.matches("[a-zA-Z0-9]+", userInput);
 
     return validInput;
   }
