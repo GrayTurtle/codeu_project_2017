@@ -84,7 +84,7 @@ public final class ClientUser {
 	    return (prev != current);
     }
     
-    LOG.info("Incorrect login info was used");
+    System.out.println("Login was UNSUCCESSFUL due to your username and password combinatio of: " + name + " " + password);
     return false;
   }
 
