@@ -26,7 +26,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void checkUserNameExists() {
-		final User user = controller.newUser("user");
+		final User user = controller.newUser("user", "test");
 		boolean userNameExists = false;
 
 		try {
@@ -42,7 +42,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetUser() {
-		final User user = controller.newUser("user");
+		final User user = controller.newUser("user", "test");
 		User testUser = null;
 		try {
 			//ds.addUser(user);
@@ -70,7 +70,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetConversation() { 
-		User user = controller.newUser("user");
+		User user = controller.newUser("user", "test");
 		Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		Conversation testConversation = null;
 
@@ -106,7 +106,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void updateMessagesForConversation() {
-		final User user = controller.newUser("user");
+		final User user = controller.newUser("user", "test");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message firstMessage = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message lastMessage = controller.newMessage(user.id, conversation.id, "TEST LAST MESSAGE");
@@ -131,7 +131,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void getMessage() {
-		final User user = controller.newUser("user");
+		final User user = controller.newUser("user", "test");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		Message testMessage = null;
@@ -158,7 +158,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void changeNextMessage() {
-		final User user = controller.newUser("user");
+		final User user = controller.newUser("user", "test");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message nextMessage = controller.newMessage(user.id, conversation.id, "TEST NEXt MESSAGE");
@@ -176,6 +176,24 @@ public class DerbyStoreTest {
 				"Check that messages can be retrieved and have the same id",
 				Uuid.equals(message.next, nextMessage.id));
 
+	}
+	
+	@Test
+	public void checkUserLogin() {
+		final User user = controller.newUser("bob", "bob");
+		User userTest = null;
+			
+		try {
+			//ds.addMessage(message);
+			userTest = ds.userLogin("bob", "bob");
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		assertTrue(
+				"Check user login",
+				user == null);
 	}
 
 
