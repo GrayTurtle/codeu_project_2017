@@ -65,7 +65,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public User newUser(String name) {
+  public User newUser(String name, String password) {
 
     User response = null;
 
@@ -73,6 +73,10 @@ public class Controller implements BasicController {
 
       Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_USER_REQUEST);
       Serializers.STRING.write(connection.out(), name);
+      
+      // ADDED BY MALIK
+      Serializers.STRING.write(connection.out(), password);
+      
       LOG.info("newUser: Request completed.");
 
       if (Serializers.INTEGER.read(connection.in()) == NetworkCode.NEW_USER_RESPONSE) {
@@ -112,4 +116,27 @@ public class Controller implements BasicController {
 
     return response;
   }
+  
+  public User checkUser(String name, String password) {
+	  User validUser = null;
+	  
+	  try (final Connection connection = source.connect()) { 
+		  Serializers.INTEGER.write(connection.out(), NetworkCode.CHECK_USER_REQUEST);
+		  Serializers.STRING.write(connection.out(), name);
+		  Serializers.STRING.write(connection.out(), password);
+		  
+		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+			  validUser = Serializers.nullable(User.SERIALIZER).read(connection.in());
+		  } else {
+		      LOG.error("Response from server failed.");
+		  }  
+			  
+	  } catch (Exception ex) {
+		  System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	  }
+	  
+	  return validUser;
+  }
+  
 }

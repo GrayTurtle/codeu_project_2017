@@ -110,7 +110,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		ResultSet user = getUser.executeQuery();
 		
 		if (user.next()) {
-			return new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation")));
+			return new User(Uuid.parse(user.getString("userid")), user.getString("name"), user.getString("password"), Time.fromMs(user.getLong("creation")));
 			
 		}
 		return null;
@@ -160,9 +160,9 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		PreparedStatement checkValidUserTest = conn.prepareStatement(checkValidUser);
 		checkValidUserTest.setString(1, name);
 		checkValidUserTest.setString(2, password);
-		ResultSet user = checkValidUserTest.executeQuery();
+		ResultSet user = checkValidUserTest.executeQuery();	
 		
-		return (user.next()) ? new User(Uuid.parse(user.getString("userid")), user.getString("name"), Time.fromMs(user.getLong("creation"))) : null;
+		return (user.next()) ? new User(Uuid.parse(user.getString("userid")), user.getString("name"), user.getString("password"), Time.fromMs(user.getLong("creation"))) : null;
 	}
 	
 	@Override
@@ -170,9 +170,9 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 		PreparedStatement addUser = conn.prepareStatement(addUserInfo);
 		addUser.setString(1, removeCharsInUuid(u.id.toString()));
 		addUser.setString(2, u.name);
-		addUser.setString(3, "test");
+		addUser.setString(3, u.password);
 		addUser.setLong(4, u.creation.inMs());
-		
+	
 		addUser.executeUpdate();
 	}
 	
@@ -261,6 +261,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 				
 				String uuid = allUsersResponse.getString("userid");
 				String name = allUsersResponse.getString("name");
+				String password = allUsersResponse.getString("password");
 				Long creation = allUsersResponse.getLong("creation");
 				
 				// Creation of uuid object from database
@@ -269,7 +270,7 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 				// Creation of time object from database
 				Time time = Time.fromMs(creation);
 				
-				User user = new User(userid, name, time);
+				User user = new User(userid, name, password, time);
 				
 				// Add each created user to the store object
 				allUsers.insert(userid, user);

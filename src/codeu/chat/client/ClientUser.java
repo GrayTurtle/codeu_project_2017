@@ -68,15 +68,24 @@ public final class ClientUser {
 
   public boolean signInUser(String name, String password) {
     updateUsers();
-
-    final User prev = current;
-    if (name != null) {
-      final User newCurrent = usersByName.first(name);
-      if (newCurrent != null) {
-        current = newCurrent;
-      }
+    
+    
+    // TODO: Add functionality to check if username combo is correct
+    User validUser = controller.checkUser(name, password);
+    
+    if (validUser != null) {
+	    final User prev = current;
+	    if (name != null) {
+	      final User newCurrent = usersByName.first(name);
+	      if (newCurrent != null) {
+	        current = newCurrent;
+	      }
+	    }
+	    return (prev != current);
     }
-    return (prev != current);
+    
+    LOG.info("Incorrect login info was used");
+    return false;
   }
 
   public boolean signOutUser() {
@@ -90,9 +99,14 @@ public final class ClientUser {
   }
 
   public void addUser(String name, String password) {
-    final boolean validInputs = isValidInput(name);
+	// TODO: check valid inputs for password OR hash it
+    boolean validInputs = isValidInput(name);
+    // TODO: I'm hardcoding validInputs since it always return false. The function
+    //		 needs to be looked at and changed.
+    validInputs = true;
 
-    final User user = (validInputs) ? controller.newUser(name) : null;    // TODO: check if user already exists
+    final User user = (validInputs) ? controller.newUser(name, password) : null;    // TODO: check if user already exists
+    
 
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",

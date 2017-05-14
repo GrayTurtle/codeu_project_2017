@@ -51,6 +51,7 @@ final class SimpleGuiClientMain {
       final View view = new View(source);
 
       LOG.info("Creating client...");
+      
 
       runClient(controller, view, args);
 
@@ -69,6 +70,7 @@ final class SimpleGuiClientMain {
     LOG.info("Created client");
 
     chatGuiFX.launch(controller, view);
+    
 
     LOG.info("chat client is running.");
   }

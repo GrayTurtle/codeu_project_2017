@@ -2,6 +2,7 @@ package codeu.chat.client.simplegui;
 
 import codeu.chat.client.ClientUser;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -32,7 +33,7 @@ public final class ChatGuiFX extends Application {
     private Scene signInScene, mainScene;           // Scenes to hold all the elements for each page
     private TextField userInput;
     private PasswordField passInput;                // Takes input for username and password
-    private ClientContext clientContext;            //
+    private static ClientContext clientContext;            //
 
     // main page vars
     private HBox hboxClient;
@@ -52,7 +53,7 @@ public final class ChatGuiFX extends Application {
     private TextFlow convosTf;
     private TextField input;
 
-    public void run(String [] args) {
+    /*public void run(String[] args) {
         try {
             // launches gui
             Application.launch(ChatGuiFX.class, args);
@@ -62,10 +63,14 @@ public final class ChatGuiFX extends Application {
             System.exit(1);
         }
 
+    }*/
+    
+    public static void setContext(Controller controller, View view) {
+    	clientContext = new ClientContext(controller, view);
     }
 
     public void launch(Controller controller, View view) {
-        this.clientContext = new ClientContext(controller, view);
+    	setContext(controller, view);
         Application.launch(ChatGuiFX.class);
     }
 
@@ -219,24 +224,26 @@ public final class ChatGuiFX extends Application {
     {
         String username = userInput.getText();
         String password = passInput.getText();
+        
+         // TODO: I'm placing signInUser outside of the if statement since it always return false. 
+         //		  The function needs to be looked at and changed.
+        clientContext.user.signInUser(username, password);
 
         if (ClientUser.isValidInput(username)) {
 
-            clientContext.user.signInUser(username, password);
             thestage.setScene(mainScene);
         }
         else {
-
-            //TODO: show something on the screen that tells user to user different characters
+        	LOG.info("The user input was not valid");
+            // TODO: show something on the screen that tells user to user different characters
         }
     }
 
     private void signUpButtonClicked(ActionEvent e) {
-
         String username = userInput.getText();
         String password = passInput.getText();
-
-        //TODO: add in some controller logic here
+       
+        clientContext.user.addUser(username, password);
 
         thestage.setScene(mainScene);
     }
