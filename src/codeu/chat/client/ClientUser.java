@@ -101,13 +101,12 @@ public final class ClientUser {
   public void addUser(String name, String password) {
 	// TODO: check valid inputs for password OR hash it
     boolean validInputs = isValidInput(name);
-    // TODO: I'm hardcoding validInputs since it always return false. The function
+    // TODO: I'm hardcoding validInputs since it always return false. The function isValidInputs()
     //		 needs to be looked at and changed.
     validInputs = true;
 
-    final User user = (validInputs) ? controller.newUser(name, password) : null;    // TODO: check if user already exists
+    final User user = (validInputs) ? controller.newUser(name, password) : null;
     
-
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");

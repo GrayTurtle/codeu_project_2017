@@ -226,7 +226,7 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
         
          // TODO: I'm placing signInUser outside of the if statement since it always return false. 
-         //		  The function needs to be looked at and changed.
+         //		  The function isValidInputs() needs to be looked at and changed.
         clientContext.user.signInUser(username, password);
 
         if (ClientUser.isValidInput(username)) {
