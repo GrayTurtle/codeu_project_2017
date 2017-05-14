@@ -96,6 +96,30 @@ public final class Model {
     userByTime.insert(user.creation, user);
     userByText.insert(user.name, user);
   }
+  
+  public User checkUserLogin(String name, String password) {
+	  User user = null;
+	  try {
+		  user = ds.userLogin(name, password);
+	  }
+	  catch (Exception ex) {
+			System.out.println("Logging in a user did not work.");
+			ex.printStackTrace(); 
+	  }
+	  
+	  return user;
+  }
+  
+  public boolean checkUsername(String name) {
+	  try {
+		  return ds.checkUsernameExists(name);
+	  }
+	  catch (Exception ex) {
+		 ex.printStackTrace(); 
+	  }
+	  
+  return false;
+  }
 
   public StoreAccessor<Uuid, User> userById() {
     return userById;
