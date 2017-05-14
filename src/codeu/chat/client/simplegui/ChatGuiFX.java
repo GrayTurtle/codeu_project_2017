@@ -33,7 +33,7 @@ public final class ChatGuiFX extends Application {
 
 
     // both page vars
-    private ClientContext clientContext;
+    //private ClientContext clientContext;
 
 
     // login page vars
@@ -44,7 +44,7 @@ public final class ChatGuiFX extends Application {
 
     // There was merge conflict here. I have no idea why
     private Label errorLabel;                       // Displays error messages
-    private static ClientContext clientContext;          
+    private static ClientContext clientContext;
 
     // list of conversations
     private ObservableList<String> convoList;      // list of conversations
@@ -62,7 +62,7 @@ public final class ChatGuiFX extends Application {
         }
 
     }*/
-    
+
     public static void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
     }
@@ -232,8 +232,8 @@ public final class ChatGuiFX extends Application {
     private void signInButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
-        
-         // TODO: I'm placing signInUser outside of the if statement since it always return false. 
+
+         // TODO: I'm placing signInUser outside of the if statement since it always return false.
          //		  The function isValidInputs() needs to be looked at and changed.
         clientContext.user.signInUser(username, password);
 
@@ -252,7 +252,7 @@ public final class ChatGuiFX extends Application {
     private void signUpButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
-        
+
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
             clientContext.user.addUser(username, password);
             thestage.setScene(mainScene);
