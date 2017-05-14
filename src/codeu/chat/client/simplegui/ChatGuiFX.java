@@ -13,6 +13,7 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.scene.text.*;
 import javafx.collections.*;
+import javafx.scene.input.MouseEvent;
 
 import codeu.chat.client.ClientContext;
 import codeu.chat.client.Controller;
@@ -45,23 +46,10 @@ public final class ChatGuiFX extends Application {
     private Label errorLabel;                       // Displays error messages
     private static ClientContext clientContext;          
 
-    // main page vars
-    private HBox hboxClient;
-    private HBox hboxInput;
-    private VBox userVBox;
-    private VBox chatVBox;
-    private VBox convosVBox;
-    private BorderPane container;
-    private Button sendButton;
-    private Button updateButton;
-    private Button addConvoButton;
-    private Text userTitle;
-    private Text chatTitle;
-    private Text convosTitle;
-    private TextFlow userTf;
-    private TextFlow chatTf;
-    private TextFlow convosTf;
-    private TextField input;
+    // list of conversations
+    private ObservableList<String> convoList;      // list of conversations
+    private ListView<String> conversations;        // holds the list of conversations
+    Text chatTitle;                                // title of conversation
 
     /*public void run(String[] args) {
         try {
@@ -169,30 +157,30 @@ public final class ChatGuiFX extends Application {
 
         // Main Page
 
-        hboxClient = new HBox();
-        hboxInput = new HBox();
-        userVBox = new VBox();
-        chatVBox = new VBox();
-        convosVBox = new VBox();
-        container = new BorderPane();
-        sendButton = new Button("Send");
-        updateButton = new Button("Update");
-        addConvoButton = new Button("Add Conversation");
-        userTitle = new Text("Users");
-        chatTitle = new Text("Conversation"); // changed based on name?
-        convosTitle = new Text("Conversations");
-        userTf = new TextFlow(userTitle);
-        chatTf = new TextFlow(chatTitle);
-        convosTf = new TextFlow(convosTitle);
-        input = new TextField();
+        HBox hboxClient = new HBox();                           // holds the client
+        HBox hboxInput = new HBox();                            // holds the input box
+        VBox userVBox = new VBox();                             // holds the list of users
+        VBox chatVBox = new VBox();                             // holds chat box
+        VBox convosVBox = new VBox();                           // holds the conversations
+        BorderPane container = new BorderPane();                // contains the boxes
+        Button sendButton = new Button("Send");                 // button for sending a message
+        Button updateButton = new Button("Update");             // button for updating the client
+        Button addConvoButton = new Button("Add Conversation"); // button for adding conversation
+        Text userTitle = new Text("Users");
+        chatTitle = new Text("Conversation");                   // changed based on which is select
+        Text convosTitle = new Text("Conversations");
+        TextFlow userTf = new TextFlow(userTitle);
+        TextFlow chatTf = new TextFlow(chatTitle);
+        TextFlow convosTf = new TextFlow(convosTitle);
+        TextField input = new TextField();
 
         // list of users
         ObservableList<String> usersList = FXCollections.observableArrayList();
         ListView<String> users = new ListView<String>(usersList);
 
         // list of conversations
-        ObservableList<String> convoList = FXCollections.observableArrayList();
-        ListView<String> conversations = new ListView<String>(convoList);
+        convoList = FXCollections.observableArrayList();
+        conversations = new ListView<String>(convoList);
 
         // list of messages
         ObservableList<String> messageList = FXCollections.observableArrayList();
@@ -200,6 +188,10 @@ public final class ChatGuiFX extends Application {
 
         // add listener for when user presses send and add text to the messageList
         sendButton.setOnAction(e -> messageList.addAll(input.getText()));
+        // add listener for when user presses add conversation & add to the conversation list
+        addConvoButton.setOnAction(e -> addConversation(e));
+        // add listener to the list of conversations to select a conversations
+        conversations.setOnMouseClicked(e -> selectConversation(e));
 
         // set dimensions and add components
         VBox.setVgrow(users, Priority.ALWAYS);
@@ -237,8 +229,7 @@ public final class ChatGuiFX extends Application {
         thestage.show();
     }
 
-    private void signInButtonClicked(ActionEvent e)
-    {
+    private void signInButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
         
@@ -269,5 +260,28 @@ public final class ChatGuiFX extends Application {
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
         }
+    }
+
+    private void addConversation(ActionEvent e) {
+        // popup for the user to add a conversation
+        TextInputDialog dialog = new TextInputDialog("Name your conversation!");
+        dialog.setTitle(" "); // make the title blank
+        dialog.setHeaderText("Create your conversation");
+
+        // get input and add the name of the convo
+        String name = dialog.showAndWait().get();
+
+        // TODO: check for duplicate conversations & handle them
+
+        if (name != null && name.length() > 0) {
+            // TODO: users need to be added to the server first? So I can add the conversation to that user???
+            //clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
+            convoList.addAll(name);
+        }
+    }
+
+    private void selectConversation(MouseEvent e) {
+        // set the conversation title
+        chatTitle.setText(conversations.getSelectionModel().getSelectedItem());
     }
 }
