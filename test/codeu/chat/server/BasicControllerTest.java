@@ -15,6 +15,8 @@
 package codeu.chat.server;
 
 import static org.junit.Assert.*;
+
+import codeu.chat.client.ClientUser;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -88,5 +90,76 @@ public final class BasicControllerTest {
     assertFalse(
         "Check that the message has a valid reference",
         message == null);
+  }
+
+  @Test
+  public void testAllowsNormalChar() {
+
+    final String allCaps = "GABEROONI";
+    final String allLower = "gaberooni";
+    final String multiCase = "GaBeRoOnI";
+    final String allNumeric = "3141059";
+    final String alphaNumeric = "Gaberooni555";
+
+    assertTrue(
+            "Checks that inputs in all caps are allowed",
+            ClientUser.isValidInput(allCaps)
+    );
+
+    assertTrue(
+            "Checks that inputs in all lower case are allowed",
+            ClientUser.isValidInput(allLower)
+    );
+
+    assertTrue(
+            "Checks that inputs that are all numbers are allowed",
+            ClientUser.isValidInput(allNumeric)
+    );
+
+    assertTrue(
+            "Checks that inputs with numbers and letters are allowed",
+            ClientUser.isValidInput(alphaNumeric)
+    );
+  }
+
+  @Test
+  public void testPreventsBadChar() {
+
+    final String punctuation = "!?`~[]{}@#$%^&*()<>,.;:'\\|-=_+   ";
+    final String punctAndGoodChar = "!__[GABE]__!";
+    final String foreignLanguage = "日本語が大好きですよ";
+    final String foreignAndGoodChar = "Gaburieruガブリエル";
+    final String emoji = "u/00D8";
+    final String emojiAndGoodChar = "u/00D8WOOHOOu/00D8";
+
+    assertFalse(
+            "Checks that inputs with punctuation are prevented",
+            ClientUser.isValidInput(punctuation)
+    );
+
+    assertFalse(
+            "Checks that inputs with punctuation and normal characters are still rejected",
+            ClientUser.isValidInput(punctAndGoodChar)
+    );
+
+    assertFalse(
+            "Checks that inputs in another language are prevented",
+            ClientUser.isValidInput(foreignLanguage)
+    );
+
+    assertFalse(
+            "Checks that inputs in another language and normal characters are still rejected",
+            ClientUser.isValidInput(foreignAndGoodChar)
+    );
+
+    assertFalse(
+            "Checks that inputs with emojis are prevented",
+            ClientUser.isValidInput(emoji)
+    );
+
+    assertFalse(
+            "Checks that inputs with emojis and normal characters are still rejected",
+            ClientUser.isValidInput(emojiAndGoodChar)
+    );
   }
 }
