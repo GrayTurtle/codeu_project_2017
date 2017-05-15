@@ -68,11 +68,11 @@ public final class ClientUser {
 
   public boolean signInUser(String name, String password) {
     updateUsers();
-    
-    
+
+
     // TODO: Add functionality to check if username combo is correct
     User validUser = controller.checkUser(name, password);
-    
+
     if (validUser != null) {
 	    final User prev = current;
 	    if (name != null) {
@@ -83,7 +83,7 @@ public final class ClientUser {
 	    }
 	    return (prev != current);
     }
-    
+
     System.out.println("Login was UNSUCCESSFUL due to your username and password combinatio of: " + name + " " + password);
     return false;
   }
@@ -103,10 +103,14 @@ public final class ClientUser {
     boolean validInputs = isValidInput(name);
     // TODO: I'm hardcoding validInputs since it always return false. The function isValidInputs()
     //		 needs to be looked at and changed.
-    validInputs = true;
+    //validInputs = true;
+
 
     final User user = (validInputs) ? controller.newUser(name, password) : null;
-    
+
+    // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
+    current = user;
+
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");

@@ -14,9 +14,13 @@ import javafx.stage.Stage;
 import javafx.scene.text.*;
 import javafx.collections.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.control.Alert.AlertType;
 
 import codeu.chat.client.ClientContext;
 import codeu.chat.client.Controller;
+import codeu.chat.common.ConversationSummary;
+import codeu.chat.common.User;
+import codeu.chat.common.Message;
 import codeu.chat.client.View;
 import codeu.chat.util.Logger;
 
@@ -24,44 +28,49 @@ public final class ChatGuiFX extends Application {
 
     private final static Logger.Log LOG = Logger.newLog(ChatGuiFX.class);
 
-
     private static final double WINDOW_WIDTH = 1000;
     private static final double WINDOW_HEIGHT = 500;
     private static final String SIGNIN_ERROR_MESSAGE = "Your username or password does not match. Have you signed up yet?";
     private static final String SIGNUP_ERROR_MESSAGE = "Sorry, that username already exists. Please choose a different one.";
     private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
 
-
     // both page vars
     //private ClientContext clientContext;
 
+    /*
+        **This is something to think about**
+        // TODO: split the login & main screens into separate methods
+        public void run(String[] args) {
+            buildLoginScene();
+            buildMainScene();
+        }
+    */
 
     // login page vars
-    private Stage thestage;                         // Holds the scene that user is currently viewing
-    private Scene signInScene, mainScene;           // Scenes to hold all the elements for each page
+    // Holds the scene that user is currently viewing
+    private Stage thestage;
+    // Scenes to hold all the elements for each page
+    private Scene signInScene, mainScene;
+    // Takes input for username and password
     private TextField userInput;
-    private PasswordField passInput;                // Takes input for username and password
+    private PasswordField passInput;
 
     // There was merge conflict here. I have no idea why
-    private Label errorLabel;                       // Displays error messages
+    // Displays error messages
+    private Label errorLabel;
     private static ClientContext clientContext;
 
+    // holds the list of conversations
+    private ObservableList<String> convoList;
     // list of conversations
-    private ObservableList<String> convoList;      // list of conversations
-    private ListView<String> conversations;        // holds the list of conversations
-    Text chatTitle;                                // title of conversation
-
-    /*public void run(String[] args) {
-        try {
-            // launches gui
-            Application.launch(ChatGuiFX.class, args);
-        } catch (Exception ex) {
-            System.out.println("ERROR: Exception in ChatGuiFX.run. Check log for details.");
-            LOG.error(ex, "Exception in ChatGuiFX.run");
-            System.exit(1);
-        }
-
-    }*/
+    private ListView<String> conversations;
+    // title of conversation
+    private Text chatTitle;
+    // holds the list of messages
+    private ObservableList<String> messageList;
+    // list of messages
+    private ListView<String> messages;
+    private TextField input;
 
     public static void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
@@ -72,16 +81,14 @@ public final class ChatGuiFX extends Application {
         Application.launch(ChatGuiFX.class);
     }
 
-    // Test commit- commit only, no pull request yet
-
     @Override
     public void start(Stage primaryStage) throws Exception {
 
         // Sign in page
-
-        this.thestage = primaryStage;                           // Initialize the main stage
-
-        BorderPane signInPane = new BorderPane();               // Initialize panes
+        // Initialize the main stage
+        this.thestage = primaryStage;
+        // Initialize panes
+        BorderPane signInPane = new BorderPane();
         FlowPane signInLabelPane = new FlowPane();
         HBox inputMasterBox = new HBox();
         inputMasterBox.setSpacing(5);
@@ -100,7 +107,6 @@ public final class ChatGuiFX extends Application {
         passHBox.setAlignment(Pos.CENTER);
         buttonBox.setAlignment(Pos.CENTER);
 
-
         // Set up labels
         Label signInLabel = new Label("Sign-in screen");
         Label userLabel = new Label("Username:");
@@ -118,8 +124,9 @@ public final class ChatGuiFX extends Application {
         Button signUpButton = new Button("Sign up");
         signInButton.setMinWidth(buttonBox.getPrefWidth());
         signUpButton.setMinWidth(buttonBox.getPrefWidth());
-        signInButton.setOnAction((event)-> signInButtonClicked(event));       // Initialize event handlers
-        signUpButton.setOnAction((event) -> signUpButtonClicked(event));      //
+        // Initialize event handlers
+        signInButton.setOnAction((event)-> signInButtonClicked(event));
+        signUpButton.setOnAction((event) -> signUpButtonClicked(event));
 
         // Set up password fields
         userInput = new TextField();
@@ -129,50 +136,60 @@ public final class ChatGuiFX extends Application {
         userInput.setAlignment(Pos.CENTER);
         passInput.setAlignment(Pos.CENTER);
 
+         // Add labels to their respective panes
+        signInLabelPane.getChildren().add(signInLabel);
 
-        signInLabelPane.getChildren().add(signInLabel);         // Add labels to their respective panes
-
-        usernameHBox.getChildren().add(userLabel);
-        usernameHBox.getChildren().add(userInput);          // Set up HBoxes to hold username and password labels/inputs
+        // Set up HBoxes to hold username and password labels/inputs
         passHBox.getChildren().add(passLabel);
+        usernameHBox.getChildren().add(userLabel);
+        usernameHBox.getChildren().add(userInput);
         passHBox.getChildren().add(passInput);
 
+         // Add those HBoxes to a VBox to stack them on top of each other
         inputVBox.getChildren().add(usernameHBox);
-        inputVBox.getChildren().add(passHBox);              // Add those HBoxes to a VBox to stack them on top of each other
+        inputVBox.getChildren().add(passHBox);
 
+        // Add buttons to a VBox to one on top of the other
         buttonBox.getChildren().add(signInButton);
-        buttonBox.getChildren().add(signUpButton);          // Add buttons to a VBox to one on top of the other
-
+        buttonBox.getChildren().add(signUpButton);
         inputMasterBox.getChildren().add(inputVBox);
-        inputMasterBox.getChildren().add(buttonBox);     // Add that VBox and buttons to the inputMasterBox
+         // Add that VBox and buttons to the inputMasterBox
+        inputMasterBox.getChildren().add(buttonBox);
 
         signInPane.setTop(signInLabelPane);
-        signInPane.setCenter(inputMasterBox);                 // Add labels and input box to the pane
         signInPane.setBottom(errorLabel);
-
+        // Add labels and input box to the pane
+        signInPane.setCenter(inputMasterBox);
 
         signInScene = new Scene(signInPane, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-
-
         // Main Page
-
-        HBox hboxClient = new HBox();                           // holds the client
-        HBox hboxInput = new HBox();                            // holds the input box
-        VBox userVBox = new VBox();                             // holds the list of users
-        VBox chatVBox = new VBox();                             // holds chat box
-        VBox convosVBox = new VBox();                           // holds the conversations
-        BorderPane container = new BorderPane();                // contains the boxes
-        Button sendButton = new Button("Send");                 // button for sending a message
-        Button updateButton = new Button("Update");             // button for updating the client
-        Button addConvoButton = new Button("Add Conversation"); // button for adding conversation
+        // holds the client
+        HBox hboxClient = new HBox();
+        // holds the input box
+        HBox hboxInput = new HBox();
+         // holds the list of users
+        VBox userVBox = new VBox();
+         // holds chat box
+        VBox chatVBox = new VBox();
+        // holds the conversations
+        VBox convosVBox = new VBox();
+          // contains the boxes
+        BorderPane container = new BorderPane();
+         // button for sending a message
+        Button sendButton = new Button("Send");
+        // button for updating the client
+        Button updateButton = new Button("Update");
+        // button for adding conversation
+        Button addConvoButton = new Button("Add Conversation");
         Text userTitle = new Text("Users");
-        chatTitle = new Text("Conversation");                   // changed based on which is select
+         // changed based on which is select
+        chatTitle = new Text("Conversation");
         Text convosTitle = new Text("Conversations");
         TextFlow userTf = new TextFlow(userTitle);
         TextFlow chatTf = new TextFlow(chatTitle);
         TextFlow convosTf = new TextFlow(convosTitle);
-        TextField input = new TextField();
+        input = new TextField();
 
         // list of users
         ObservableList<String> usersList = FXCollections.observableArrayList();
@@ -183,15 +200,15 @@ public final class ChatGuiFX extends Application {
         conversations = new ListView<String>(convoList);
 
         // list of messages
-        ObservableList<String> messageList = FXCollections.observableArrayList();
-        ListView<String> messages = new ListView<String>(messageList);
+        messageList = FXCollections.observableArrayList();
+        messages = new ListView<String>(messageList);
 
-        // add listener for when user presses send and add text to the messageList
-        sendButton.setOnAction(e -> messageList.addAll(input.getText()));
         // add listener for when user presses add conversation & add to the conversation list
         addConvoButton.setOnAction(e -> addConversation(e));
         // add listener to the list of conversations to select a conversations
         conversations.setOnMouseClicked(e -> selectConversation(e));
+        // add listener to the send button to send messages to the conversation
+        sendButton.setOnAction(e -> sendMessage(e));
 
         // set dimensions and add components
         VBox.setVgrow(users, Priority.ALWAYS);
@@ -227,20 +244,21 @@ public final class ChatGuiFX extends Application {
         mainScene = new Scene(container, WINDOW_WIDTH, WINDOW_HEIGHT);
         thestage.setScene(signInScene);
         thestage.show();
+
+        // populate the conversations and messages from the past signins
+        getAllMessages(clientContext.conversation.getCurrent());
+        getAllConversations(conversations);
     }
 
+    /*
+        Sign in
+    */
     private void signInButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
 
-         // TODO: I'm placing signInUser outside of the if statement since it always return false.
-         //		  The function isValidInputs() needs to be looked at and changed.
-        clientContext.user.signInUser(username, password);
-
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-
-
-            //clientContext.user.signInUser(username, password);
+            clientContext.user.signInUser(username, password);
             thestage.setScene(mainScene);
         }
         else {
@@ -262,26 +280,121 @@ public final class ChatGuiFX extends Application {
         }
     }
 
+    /*
+        Main Chat
+    */
     private void addConversation(ActionEvent e) {
-        // popup for the user to add a conversation
-        TextInputDialog dialog = new TextInputDialog("Name your conversation!");
-        dialog.setTitle(" "); // make the title blank
-        dialog.setHeaderText("Create your conversation");
+        if (clientContext.user.hasCurrent()) {
+            // popup for the user to add a conversation
+            TextInputDialog dialog = new TextInputDialog("Name your conversation!");
+            dialog.setTitle(" "); // make the title blank
+            dialog.setHeaderText("Create your conversation");
 
-        // get input and add the name of the convo
-        String name = dialog.showAndWait().get();
+            // get input and add the name of the convo
+            String name = dialog.showAndWait().get();
 
-        // TODO: check for duplicate conversations & handle them
+            // TODO: check for duplicate conversations & handle them
 
-        if (name != null && name.length() > 0) {
-            // TODO: users need to be added to the server first? So I can add the conversation to that user???
-            //clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-            convoList.addAll(name);
+            if (name != null && name.length() > 0) {
+                clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
+                convoList.addAll(name);
+            }
+        } else {
+            // user is not signed in
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText("You're not signed in!");
+            alert.showAndWait();
         }
     }
 
     private void selectConversation(MouseEvent e) {
         // set the conversation title
-        chatTitle.setText(conversations.getSelectionModel().getSelectedItem());
+        int index = conversations.getSelectionModel().getSelectedIndex();
+        String data = conversations.getSelectionModel().getSelectedItem();
+        ConversationSummary cs = ChatGuiFX.this.lookupByTitle(data, index);
+
+        clientContext.conversation.setCurrent(cs);
+        update(cs);
+    }
+
+    // Locate the Conversation object for a selected title string.
+    // index handles possible duplicate titles.
+    private ConversationSummary lookupByTitle(String title, int index) {
+
+      int localIndex = 0;
+      for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+        if ((localIndex >= index) && cs.title.equals(title)) {
+          return cs;
+        }
+        localIndex++;
+      }
+      return null;
+    }
+
+    // External agent calls this to trigger an update of this panel's contents.
+    public void update(ConversationSummary owningConversation) {
+
+        final User u = (owningConversation == null) ?
+            null :
+            clientContext.user.lookup(owningConversation.owner);
+
+        chatTitle.setText(owningConversation.title);
+
+        getAllMessages(owningConversation);
+    }
+
+    // Populate ListModel - updates display objects.
+    private void getAllConversations(ListView<String> convDisplayList) {
+
+      clientContext.conversation.updateAllConversations(false);
+      convDisplayList.getItems().clear();
+
+      for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
+        convoList.addAll(conv.title);
+      }
+    }
+
+
+    private void sendMessage(ActionEvent e) {
+        if (!clientContext.user.hasCurrent()) {
+            // if the user is not signed in
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText("You're not signed in!");
+            alert.showAndWait();
+
+        } else if (!clientContext.conversation.hasCurrent()) {
+            // if the user did not select or add a conversation
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText("Select or add a conversation on the right!");
+            alert.showAndWait();
+
+        } else {
+            String messageText = input.getText();
+            messageList.addAll(input.getText());
+            if (messageText != null && messageText.length() > 0) {
+                // add message to current conversation
+                clientContext.message.addMessage(clientContext.user.getCurrent().id,
+                    clientContext.conversation.getCurrentId(), messageText);
+
+                // populate the list
+                ChatGuiFX.this.getAllMessages(clientContext.conversation.getCurrent());
+            }
+        }
+    }
+
+    // method to populate the list of messages
+    private void getAllMessages(ConversationSummary conversation) {
+
+        messages.getItems().clear();
+
+        for (final Message m : clientContext.message.getConversationContents(conversation)) {
+            // Display author name if available.  Otherwise display the author UUID.
+            final String authorName = clientContext.user.getName(m.author);
+
+            final String displayString = String.format("%s: [%s]: %s",
+                ((authorName == null) ? m.author : authorName), m.creation, m.content);
+
+            messageList.addAll(displayString);
+      }
     }
 }
