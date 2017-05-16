@@ -84,7 +84,7 @@ public final class ClientUser {
 	    return (prev != current);
     }
 
-    System.out.println("Login was UNSUCCESSFUL due to your username and password combinatio of: " + name + " " + password);
+    System.out.println("Login was UNSUCCESSFUL due to your username and password combination of: " + name + " " + password);
     return false;
   }
 
@@ -98,7 +98,7 @@ public final class ClientUser {
     printUser(current);
   }
 
-  public void addUser(String name, String password) {
+  public boolean addUser(String name, String password) {
 	// TODO: check valid inputs for password OR hash it
     boolean validInputs = isValidInput(name);
     // TODO: I'm hardcoding validInputs since it always return false. The function isValidInputs()
@@ -114,10 +114,13 @@ public final class ClientUser {
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");
+      return false;
     } else {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
       updateUsers();
     }
+    
+    return true;
   }
 
   public void showAllUsers() {

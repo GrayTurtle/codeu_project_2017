@@ -49,30 +49,39 @@ public final class ChatGuiFX extends Application {
     // login page vars
     // Holds the scene that user is currently viewing
     private Stage thestage;
+
     // Scenes to hold all the elements for each page
     private Scene signInScene, mainScene;
-    // Takes input for username and password
+
+    // Takes input for username and password for sign in/up
     private TextField userInput;
     private PasswordField passInput;
 
-    // There was merge conflict here. I have no idea why
-    // Displays error messages
+    // Displays error messages for when the user is not sign in or has not selected a convo
     private Label errorLabel;
+
+    // variable that has the current state of the client (current user, conversation, etc)
     private static ClientContext clientContext;
 
-    // holds the list of conversations
-    private ObservableList<String> convoList;
-    // list of conversations
-    private ListView<String> conversations;
-    // title of conversation
+    // title of current/selected conversation
     private Text chatTitle;
-    // holds the list of messages
+
+    // these hold the conversations to be displayed on the right panel
+    private ObservableList<String> convoList;
+    private ListView<String> conversations;
+
+    // these hold the messages of a selected conversation to be displayed in the middle panel
     private ObservableList<String> messageList;
-    // list of messages
     private ListView<String> messages;
+
+    // these hold the users to be displayed on the left panel
+    private ObservableList<String> usersList;
+    private ListView<String> users;
+
+    // field for the input of messages into a conversation
     private TextField input;
 
-    public static void setContext(Controller controller, View view) {
+    public void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
     }
 
@@ -124,9 +133,10 @@ public final class ChatGuiFX extends Application {
         Button signUpButton = new Button("Sign up");
         signInButton.setMinWidth(buttonBox.getPrefWidth());
         signUpButton.setMinWidth(buttonBox.getPrefWidth());
+
         // Initialize event handlers
-        signInButton.setOnAction((event)-> signInButtonClicked(event));
-        signUpButton.setOnAction((event) -> signUpButtonClicked(event));
+        signInButton.setOnAction(e-> signInButtonClicked(e));
+        signUpButton.setOnAction(e -> signUpButtonClicked(e));
 
         // Set up password fields
         userInput = new TextField();
@@ -191,15 +201,11 @@ public final class ChatGuiFX extends Application {
         TextFlow convosTf = new TextFlow(convosTitle);
         input = new TextField();
 
-        // list of users
-        ObservableList<String> usersList = FXCollections.observableArrayList();
-        ListView<String> users = new ListView<String>(usersList);
-
-        // list of conversations
+        // initialize the contents of each panel (user, conversations, & messages)
+        usersList = FXCollections.observableArrayList();
+        users = new ListView<String>(usersList);
         convoList = FXCollections.observableArrayList();
         conversations = new ListView<String>(convoList);
-
-        // list of messages
         messageList = FXCollections.observableArrayList();
         messages = new ListView<String>(messageList);
 
@@ -209,6 +215,8 @@ public final class ChatGuiFX extends Application {
         conversations.setOnMouseClicked(e -> selectConversation(e));
         // add listener to the send button to send messages to the conversation
         sendButton.setOnAction(e -> sendMessage(e));
+        // add listener to the update button to update the gui
+        updateButton.setOnAction(e -> updateGUI(e));
 
         // set dimensions and add components
         VBox.setVgrow(users, Priority.ALWAYS);
@@ -245,35 +253,46 @@ public final class ChatGuiFX extends Application {
         thestage.setScene(signInScene);
         thestage.show();
 
-        // populate the conversations and messages from the past signins
-        getAllMessages(clientContext.conversation.getCurrent());
-        getAllConversations(conversations);
+        // populate the users, conversations, messages panels from the past signins
+        fillMessagesList(clientContext.conversation.getCurrent());
+        fillConversationsList(conversations);
+        fillUserList(users);
     }
 
     /*
         Sign in
+    */
+
+    /**
+    * When the sign in button is clicked, it takes the username & password from the
+    * input fields and checks if they are valid inputs. If they are, sign in the user
+    * and change to main chat
     */
     private void signInButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            clientContext.user.signInUser(username, password);
-            thestage.setScene(mainScene);
+            if (clientContext.user.signInUser(username, password))
+            	thestage.setScene(mainScene);
         }
         else {
-
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
         }
     }
 
+    /**
+    * When the sign up button is clicked, it takes the username & password from the
+    * input fields and checks if they are valid inputs. If they are, add the user
+    * and change to main chat
+    */
     private void signUpButtonClicked(ActionEvent e) {
         String username = userInput.getText();
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            clientContext.user.addUser(username, password);
-            thestage.setScene(mainScene);
+            if (clientContext.user.addUser(username, password))
+            	thestage.setScene(mainScene);
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -283,11 +302,17 @@ public final class ChatGuiFX extends Application {
     /*
         Main Chat
     */
+
+    /**
+    * When the add conversation button is pressed, it pops up a dialog for the user to
+    * input a new conversation. If the conversation name is valid, add the conversation
+    * to the list of conversations to be displayed.
+    */
     private void addConversation(ActionEvent e) {
         if (clientContext.user.hasCurrent()) {
             // popup for the user to add a conversation
             TextInputDialog dialog = new TextInputDialog("Name your conversation!");
-            dialog.setTitle(" "); // make the title blank
+            dialog.setTitle(" ");
             dialog.setHeaderText("Create your conversation");
 
             // get input and add the name of the convo
@@ -295,95 +320,119 @@ public final class ChatGuiFX extends Application {
 
             // TODO: check for duplicate conversations & handle them
 
-            if (name != null && name.length() > 0) {
+            if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
                 convoList.addAll(name);
             }
         } else {
             // user is not signed in
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText("You're not signed in!");
-            alert.showAndWait();
+            displayAlert("You're not signed in!");
         }
     }
 
+    /**
+    * When the user clicks on a conversation in the right panel, it gets its index and name to
+    * fetch its contents, which is a ConversationSummary object. Then it sets the current conversation
+    * to the selected conversation.
+    */
     private void selectConversation(MouseEvent e) {
         // set the conversation title
         int index = conversations.getSelectionModel().getSelectedIndex();
         String data = conversations.getSelectionModel().getSelectedItem();
-        ConversationSummary cs = ChatGuiFX.this.lookupByTitle(data, index);
-
-        clientContext.conversation.setCurrent(cs);
-        update(cs);
+        // get contents of conversation
+        ConversationSummary selectedConvo = lookupByTitle(data, index);
+        // set new conversation
+        clientContext.conversation.setCurrent(selectedConvo);
+        updateCurrentConversation(selectedConvo);
     }
 
-    // Locate the Conversation object for a selected title string.
-    // index handles possible duplicate titles.
+    /**
+    * Finds the ConversationSummary (the contents of the conversation) that corresponds to
+    * the selected conversation
+    * @param title  name of the selected conversation
+    * @param index  index of selected conversation in the list of conversations
+    */
     private ConversationSummary lookupByTitle(String title, int index) {
-
-      int localIndex = 0;
-      for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-        if ((localIndex >= index) && cs.title.equals(title)) {
-          return cs;
+        int localIndex = 0;
+        for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+            if ((localIndex >= index) && cs.title.equals(title)) {
+                return cs;
+            }
+            localIndex++;
         }
-        localIndex++;
-      }
-      return null;
+        return null;
     }
 
-    // External agent calls this to trigger an update of this panel's contents.
-    public void update(ConversationSummary owningConversation) {
-
-        final User u = (owningConversation == null) ?
-            null :
-            clientContext.user.lookup(owningConversation.owner);
-
-        chatTitle.setText(owningConversation.title);
-
-        getAllMessages(owningConversation);
+    /**
+    * Sets the conversation title to be selected conversation & fills the middle panel
+    * with the selected conversation's messages
+    * @param selectedConvo  the selected conversation
+    */
+    private void updateCurrentConversation(ConversationSummary selectedConvo) {
+        chatTitle.setText(selectedConvo.title);
+        // fills the message panel with the messages of the selected conversation
+        fillMessagesList(selectedConvo);
     }
 
-    // Populate ListModel - updates display objects.
-    private void getAllConversations(ListView<String> convDisplayList) {
-
-      clientContext.conversation.updateAllConversations(false);
-      convDisplayList.getItems().clear();
-
-      for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
-        convoList.addAll(conv.title);
-      }
-    }
-
-
+    /**
+    * When the user presses the send button, it gives user's unique message to the
+    * current conversation & adds to the list of messages to be displayed.
+    * If the user is not signed in or has not selected a conversation, an error
+    * message pops up.
+    */
     private void sendMessage(ActionEvent e) {
         if (!clientContext.user.hasCurrent()) {
             // if the user is not signed in
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText("You're not signed in!");
-            alert.showAndWait();
+            displayAlert("You're not signed in!");
 
         } else if (!clientContext.conversation.hasCurrent()) {
             // if the user did not select or add a conversation
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText("Select or add a conversation on the right!");
-            alert.showAndWait();
+            displayAlert("Add or click a conversation on the right!");
 
         } else {
             String messageText = input.getText();
             messageList.addAll(input.getText());
-            if (messageText != null && messageText.length() > 0) {
+            if (!messageText.isEmpty() && messageText.length() > 0) {
                 // add message to current conversation
                 clientContext.message.addMessage(clientContext.user.getCurrent().id,
                     clientContext.conversation.getCurrentId(), messageText);
 
-                // populate the list
-                ChatGuiFX.this.getAllMessages(clientContext.conversation.getCurrent());
+                // populate the list of messages with the current conversation's updated messages
+                fillMessagesList(clientContext.conversation.getCurrent());
             }
         }
     }
 
-    // method to populate the list of messages
-    private void getAllMessages(ConversationSummary conversation) {
+    /**
+    * Displays an error message
+    * @param warningMessage  the error message to be displayed
+    */
+    private void displayAlert(String warningMessage) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText(warningMessage);
+        alert.showAndWait();
+    }
+
+
+    /**
+    * Populates the list of conversations to be displayed
+    * @param conversations  the current conversations that will be cleared & updated
+    */
+    private void fillConversationsList(ListView<String> conversations) {
+        clientContext.conversation.updateAllConversations(false);
+        conversations.getItems().clear();
+
+        for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
+            convoList.addAll(conv.title);
+        }
+    }
+
+    /**
+    * Populates the list of messages to be displayed
+    * @param conversation  the contents of the current conversation that the method uses to
+    *                      to get usernames, time of creation, etc.
+    */
+    private void fillMessagesList(ConversationSummary conversation) {
 
         messages.getItems().clear();
 
@@ -392,9 +441,34 @@ public final class ChatGuiFX extends Application {
             final String authorName = clientContext.user.getName(m.author);
 
             final String displayString = String.format("%s: [%s]: %s",
-                ((authorName == null) ? m.author : authorName), m.creation, m.content);
+                ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
 
             messageList.addAll(displayString);
       }
+    }
+
+    /**
+    * Populates the list of users to be displayed
+    * @param users  the current list of users that will be cleared & updated
+    */
+    private void fillUserList(ListView<String> users) {
+        clientContext.user.updateUsers();
+        users.getItems().clear();
+
+        for (final User u : clientContext.user.getUsers()) {
+            usersList.addAll(u.name);
+        }
+    }
+
+    // TODO: set up a loop to where this updates every half sec or so
+    /**
+    * When the user presses the update button, update the GUI by clearing & and filling
+    * all the lists that will be displayed with updated content
+    */
+    private void updateGUI(ActionEvent e) {
+        fillUserList(users);
+        fillConversationsList(conversations);
+        clientContext.message.updateMessages(true);
+        fillMessagesList(clientContext.conversation.getCurrent());
     }
 }
