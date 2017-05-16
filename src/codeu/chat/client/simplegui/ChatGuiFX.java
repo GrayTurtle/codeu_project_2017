@@ -273,8 +273,8 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            clientContext.user.signInUser(username, password);
-            thestage.setScene(mainScene);
+            if (clientContext.user.signInUser(username, password))
+            	thestage.setScene(mainScene);
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -291,8 +291,8 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            clientContext.user.addUser(username, password);
-            thestage.setScene(mainScene);
+            if (clientContext.user.addUser(username, password))
+            	thestage.setScene(mainScene);
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
