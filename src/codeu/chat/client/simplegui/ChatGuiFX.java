@@ -441,7 +441,7 @@ public final class ChatGuiFX extends Application {
             final String authorName = clientContext.user.getName(m.author);
 
             final String displayString = String.format("%s: [%s]: %s",
-                ((!authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
+                ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
 
             messageList.addAll(displayString);
       }
