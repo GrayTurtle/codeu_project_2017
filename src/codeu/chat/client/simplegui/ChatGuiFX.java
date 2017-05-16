@@ -70,6 +70,8 @@ public final class ChatGuiFX extends Application {
     private ObservableList<String> messageList;
     // list of messages
     private ListView<String> messages;
+    private ObservableList<String> usersList;
+    private ListView<String> users;
     private TextField input;
 
     public static void setContext(Controller controller, View view) {
@@ -192,8 +194,8 @@ public final class ChatGuiFX extends Application {
         input = new TextField();
 
         // list of users
-        ObservableList<String> usersList = FXCollections.observableArrayList();
-        ListView<String> users = new ListView<String>(usersList);
+        usersList = FXCollections.observableArrayList();
+        users = new ListView<String>(usersList);
 
         // list of conversations
         convoList = FXCollections.observableArrayList();
@@ -209,6 +211,8 @@ public final class ChatGuiFX extends Application {
         conversations.setOnMouseClicked(e -> selectConversation(e));
         // add listener to the send button to send messages to the conversation
         sendButton.setOnAction(e -> sendMessage(e));
+
+        updateButton.setOnAction(e -> updateGUI(e));
 
         // set dimensions and add components
         VBox.setVgrow(users, Priority.ALWAYS);
@@ -248,6 +252,7 @@ public final class ChatGuiFX extends Application {
         // populate the conversations and messages from the past signins
         getAllMessages(clientContext.conversation.getCurrent());
         getAllConversations(conversations);
+        fillUserList(users);
     }
 
     /*
@@ -346,12 +351,12 @@ public final class ChatGuiFX extends Application {
     // Populate ListModel - updates display objects.
     private void getAllConversations(ListView<String> convDisplayList) {
 
-      clientContext.conversation.updateAllConversations(false);
-      convDisplayList.getItems().clear();
+        clientContext.conversation.updateAllConversations(false);
+        convDisplayList.getItems().clear();
 
-      for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
-        convoList.addAll(conv.title);
-      }
+        for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
+            convoList.addAll(conv.title);
+        }
     }
 
 
@@ -377,7 +382,7 @@ public final class ChatGuiFX extends Application {
                     clientContext.conversation.getCurrentId(), messageText);
 
                 // populate the list
-                ChatGuiFX.this.getAllMessages(clientContext.conversation.getCurrent());
+                getAllMessages(clientContext.conversation.getCurrent());
             }
         }
     }
@@ -396,5 +401,21 @@ public final class ChatGuiFX extends Application {
 
             messageList.addAll(displayString);
       }
+    }
+
+    private void fillUserList(ListView<String> users) {
+        clientContext.user.updateUsers();
+        users.getItems().clear();;
+
+        for (final User u : clientContext.user.getUsers()) {
+            usersList.addAll(u.name);
+        }
+    }
+
+    private void updateGUI(ActionEvent e) {
+        fillUserList(users);
+        getAllConversations(conversations);
+        clientContext.message.updateMessages(true);
+        getAllMessages(clientContext.conversation.getCurrent());
     }
 }
