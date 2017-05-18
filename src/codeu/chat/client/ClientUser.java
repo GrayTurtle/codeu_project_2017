@@ -153,11 +153,7 @@ public final class ClientUser {
   public void updateUsers() {
     usersById.clear();
     usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-    List<Uuid> excludedUsers = new ArrayList<Uuid>();
-    if (current != null) {
-	    excludedUsers.add(current.id);
-    }
-    for (final User user : view.getUsersExcluding(excludedUsers)) {
+    for (final User user : view.getUsersExcluding(EMPTY)) {
       usersById.put(user.id, user);
       usersByName.insert(user.name, user);
     }

@@ -23,6 +23,7 @@ import codeu.chat.common.User;
 import codeu.chat.common.Message;
 import codeu.chat.client.View;
 import codeu.chat.util.Logger;
+import codeu.chat.util.Uuid;
 
 public final class ChatGuiFX extends Application {
 
@@ -354,6 +355,7 @@ public final class ChatGuiFX extends Application {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
+        
         clientContext.conversation.setCurrent(selectedConvo);
         updateCurrentConversation(selectedConvo);
     }
@@ -445,12 +447,15 @@ public final class ChatGuiFX extends Application {
     *                      to get usernames, time of creation, etc.
     */
     private void fillMessagesList(ConversationSummary conversation) {
+    	
+    	if (conversation == null) System.out.println("YOU'RE A NULL BOI");
 
         messages.getItems().clear();
 
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
+            
 
             final String displayString = String.format("%s: [%s]: %s",
                 ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
@@ -466,9 +471,10 @@ public final class ChatGuiFX extends Application {
     private void fillUserList(ListView<String> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
-
+        User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
-            usersList.addAll(u.name);
+        	if (!Uuid.equals(u.id, currentUser.id))
+        		usersList.add(u.name);
         }
     }
 
