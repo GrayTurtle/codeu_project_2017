@@ -447,9 +447,6 @@ public final class ChatGuiFX extends Application {
     *                      to get usernames, time of creation, etc.
     */
     private void fillMessagesList(ConversationSummary conversation) {
-    	
-    	if (conversation == null) System.out.println("YOU'RE A NULL BOI");
-
         messages.getItems().clear();
 
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
@@ -471,6 +468,7 @@ public final class ChatGuiFX extends Application {
     private void fillUserList(ListView<String> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
+        
         User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
         	if (!Uuid.equals(u.id, currentUser.id))
