@@ -355,9 +355,10 @@ public final class ChatGuiFX extends Application {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
-        
-        clientContext.conversation.setCurrent(selectedConvo);
-        updateCurrentConversation(selectedConvo);
+        if (selectedConvo != null) {
+	        clientContext.conversation.setCurrent(selectedConvo);
+	        updateCurrentConversation(selectedConvo);
+        }
     }
 
     /**
