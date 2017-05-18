@@ -172,4 +172,8 @@ public final class ClientUser {
   public int getMessageCount(Uuid userid) {
       return view.getMessageCount(userid);
   }
+  
+  public int increaseMessageCount(Uuid userid) {
+	  return controller.updateMessageCount(userid);
+  }
 }

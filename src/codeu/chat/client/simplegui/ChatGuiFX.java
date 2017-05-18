@@ -408,9 +408,13 @@ public final class ChatGuiFX extends Application {
             String messageText = input.getText();
             messageList.addAll(input.getText());
             if (!messageText.isEmpty() && messageText.length() > 0) {
+            	Uuid currentUserId = clientContext.user.getCurrent().id;
                 // add message to current conversation
-                clientContext.message.addMessage(clientContext.user.getCurrent().id,
+                clientContext.message.addMessage(currentUserId,
                     clientContext.conversation.getCurrentId(), messageText);
+                
+                // increase user message count
+                clientContext.user.increaseMessageCount(currentUserId);
 
                 // populate the list of messages with the current conversation's updated messages
                 fillMessagesList(clientContext.conversation.getCurrent());
