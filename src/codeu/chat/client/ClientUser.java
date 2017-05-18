@@ -69,9 +69,7 @@ public final class ClientUser {
   public boolean signInUser(String name, String password) {
     updateUsers();
 
-
-    // TODO: Add functionality to check if username combo is correct
-    User validUser = controller.checkUser(name, password);
+    User validUser = view.checkUserLogin(name, password);
 
     if (validUser != null) {
 	    final User prev = current;

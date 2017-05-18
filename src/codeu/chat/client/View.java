@@ -280,4 +280,49 @@ public final class View implements BasicView, LogicalView{
 
     return messages;
   }
+   
+  public User checkUserLogin(String name, String password) {
+	  User validUser = null;
+	  
+	  try (final Connection connection = source.connect()) { 
+		  Serializers.INTEGER.write(connection.out(), NetworkCode.CHECK_USER_REQUEST);
+		  Serializers.STRING.write(connection.out(), name);
+		  Serializers.STRING.write(connection.out(), password);
+		  
+		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+			  validUser = Serializers.nullable(User.SERIALIZER).read(connection.in());
+		  } else {
+		      LOG.error("Response from server failed.");
+		  }  
+			  
+	  } catch (Exception ex) {
+		  System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	  }
+	  
+	  return validUser;
+  }
+  
+  public int getMessageCount(Uuid userid) {
+	  int messageCount = 0;
+	  
+	  try (final Connection connection = source.connect()) { 
+		  Serializers.INTEGER.write(connection.out(), NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST);
+		  Uuid.SERIALIZER.write(connection.out(), userid);
+		  
+		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) {
+			  messageCount = Serializers.INTEGER.read(connection.in());
+		  }
+		  else {
+		      LOG.error("Response from server failed.");
+		  }
+	  }
+	  catch (Exception ex) {
+	      System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	    }
+	  
+  return messageCount;
+  }
+  
 }
