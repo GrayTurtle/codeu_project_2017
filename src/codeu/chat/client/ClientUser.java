@@ -102,9 +102,6 @@ public final class ClientUser {
   public boolean addUser(String name, String password) {
 	// TODO: check valid inputs for password OR hash it
     boolean validInputs = isValidInput(name);
-    // TODO: I'm hardcoding validInputs since it always return false. The function isValidInputs()
-    //		 needs to be looked at and changed.
-    //validInputs = true;
 
 
     final User user = (validInputs) ? controller.newUser(name, password) : null;
@@ -120,7 +117,7 @@ public final class ClientUser {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
       updateUsers();
     }
-    
+
     return true;
   }
 
@@ -170,5 +167,9 @@ public final class ClientUser {
   // Move to User's toString()
   public static void printUser(User user) {
     System.out.println(getUserInfoString(user));
+  }
+
+  public int getMessageCount(Uuid userid) {
+      return view.getMessageCount(userid);
   }
 }

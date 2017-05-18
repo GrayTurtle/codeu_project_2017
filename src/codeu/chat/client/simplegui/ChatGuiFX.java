@@ -453,7 +453,7 @@ public final class ChatGuiFX extends Application {
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
-            
+
 
             final String displayString = String.format("%s: [%s]: %s",
                 ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
@@ -469,7 +469,7 @@ public final class ChatGuiFX extends Application {
     private void fillUserList(ListView<String> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
-        
+
         User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
         	if (!Uuid.equals(u.id, currentUser.id))
@@ -487,5 +487,7 @@ public final class ChatGuiFX extends Application {
         fillConversationsList(conversations);
         clientContext.message.updateMessages(true);
         fillMessagesList(clientContext.conversation.getCurrent());
+        User currentUser = clientContext.user.getCurrent();
+        System.out.println("count: " + clientContext.user.getMessageCount(currentUser.id));
     }
 }
