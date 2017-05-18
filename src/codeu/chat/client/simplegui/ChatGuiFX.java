@@ -365,12 +365,12 @@ public final class ChatGuiFX extends Application {
     * @param index  index of selected conversation in the list of conversations
     */
     private ConversationSummary lookupByTitle(String title, int index) {
-        int localIndex = 0;
         for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+        	// An exception was thrown when localIndex was used and tested in the following if statement.
+        	// Removing it seemed to fix the issue.
             if (cs.title.equals(title)) {
                 return cs;
             }
-            localIndex++;
         }
         return null;
     }
