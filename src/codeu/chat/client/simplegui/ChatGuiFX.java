@@ -253,10 +253,6 @@ public final class ChatGuiFX extends Application {
         thestage.setScene(signInScene);
         thestage.show();
 
-        // populate the users, conversations, messages panels from the past signins
-        fillMessagesList(clientContext.conversation.getCurrent());
-        fillConversationsList(conversations);
-        fillUserList(users);
     }
 
     /*
@@ -273,8 +269,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.signInUser(username, password))
+            if (clientContext.user.signInUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+                fillConversationsList(conversations);
+                fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -291,8 +292,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.addUser(username, password))
+            if (clientContext.user.addUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+            	fillConversationsList(conversations);
+            	fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -319,10 +325,16 @@ public final class ChatGuiFX extends Application {
             String name = dialog.showAndWait().get();
 
             // TODO: check for duplicate conversations & handle them
+            for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+            	if (cs.title.equals(name)) {
+            		displayAlert("There is already a conversation with that name!");
+            		return;
+            	}
+            }
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-                convoList.addAll(name);
+                convoList.add(name);
             }
         } else {
             // user is not signed in
@@ -355,7 +367,7 @@ public final class ChatGuiFX extends Application {
     private ConversationSummary lookupByTitle(String title, int index) {
         int localIndex = 0;
         for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-            if ((localIndex >= index) && cs.title.equals(title)) {
+            if (cs.title.equals(title)) {
                 return cs;
             }
             localIndex++;
