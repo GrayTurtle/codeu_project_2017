@@ -23,6 +23,7 @@ import codeu.chat.common.User;
 import codeu.chat.common.Message;
 import codeu.chat.client.View;
 import codeu.chat.util.Logger;
+import codeu.chat.util.Uuid;
 
 public final class ChatGuiFX extends Application {
 
@@ -253,10 +254,6 @@ public final class ChatGuiFX extends Application {
         thestage.setScene(signInScene);
         thestage.show();
 
-        // populate the users, conversations, messages panels from the past signins
-        fillMessagesList(clientContext.conversation.getCurrent());
-        fillConversationsList(conversations);
-        fillUserList(users);
     }
 
     /*
@@ -273,8 +270,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.signInUser(username, password))
+            if (clientContext.user.signInUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+                fillConversationsList(conversations);
+                fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -291,8 +293,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.addUser(username, password))
+            if (clientContext.user.addUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+            	fillConversationsList(conversations);
+            	fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -319,10 +326,16 @@ public final class ChatGuiFX extends Application {
             String name = dialog.showAndWait().get();
 
             // TODO: check for duplicate conversations & handle them
+            for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+            	if (cs.title.equals(name)) {
+            		displayAlert("There is already a conversation with that name!");
+            		return;
+            	}
+            }
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-                convoList.addAll(name);
+                convoList.add(name);
             }
         } else {
             // user is not signed in
@@ -342,8 +355,10 @@ public final class ChatGuiFX extends Application {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
-        clientContext.conversation.setCurrent(selectedConvo);
-        updateCurrentConversation(selectedConvo);
+        if (selectedConvo != null) {
+	        clientContext.conversation.setCurrent(selectedConvo);
+	        updateCurrentConversation(selectedConvo);
+        }
     }
 
     /**
@@ -353,12 +368,12 @@ public final class ChatGuiFX extends Application {
     * @param index  index of selected conversation in the list of conversations
     */
     private ConversationSummary lookupByTitle(String title, int index) {
-        int localIndex = 0;
         for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-            if ((localIndex >= index) && cs.title.equals(title)) {
+        	// An exception was thrown when localIndex was used and tested in the following if statement.
+        	// Removing it seemed to fix the issue.
+            if (cs.title.equals(title)) {
                 return cs;
             }
-            localIndex++;
         }
         return null;
     }
@@ -433,12 +448,12 @@ public final class ChatGuiFX extends Application {
     *                      to get usernames, time of creation, etc.
     */
     private void fillMessagesList(ConversationSummary conversation) {
-
         messages.getItems().clear();
 
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
+            
 
             final String displayString = String.format("%s: [%s]: %s",
                 ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
@@ -454,9 +469,11 @@ public final class ChatGuiFX extends Application {
     private void fillUserList(ListView<String> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
-
+        
+        User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
-            usersList.addAll(u.name);
+        	if (!Uuid.equals(u.id, currentUser.id))
+        		usersList.add(u.name);
         }
     }
 

@@ -14,9 +14,11 @@
 
 package codeu.chat.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -81,6 +83,7 @@ public final class ClientUser {
 	    }
 	    return (prev != current);
     }
+
 
     System.out.println("Login was UNSUCCESSFUL due to your username and password combination of: " + name + " " + password);
     return false;
@@ -149,7 +152,6 @@ public final class ClientUser {
   public void updateUsers() {
     usersById.clear();
     usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-
     for (final User user : view.getUsersExcluding(EMPTY)) {
       usersById.put(user.id, user);
       usersByName.insert(user.name, user);
