@@ -24,9 +24,9 @@ public class DerbyStoreTest {
 		controller = new Controller(Uuid.NULL, model);
 	}
 
-	@Test
+	/*@Test
 	public void checkUserNameExists() {
-		final User user = controller.newUser("user", "test");
+		final User user = controller.newUser("user", "testPassword");
 		boolean userNameExists = false;
 
 		try {
@@ -42,7 +42,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetUser() {
-		final User user = controller.newUser("user", "test");
+		final User user = controller.newUser("user", "testPassword");
 		User testUser = null;
 		try {
 			//ds.addUser(user);
@@ -70,7 +70,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetConversation() { 
-		User user = controller.newUser("user", "test");
+		User user = controller.newUser("user", "testPassword");
 		Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		Conversation testConversation = null;
 
@@ -106,7 +106,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void updateMessagesForConversation() {
-		final User user = controller.newUser("user", "test");
+		final User user = controller.newUser("user", "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message firstMessage = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message lastMessage = controller.newMessage(user.id, conversation.id, "TEST LAST MESSAGE");
@@ -131,7 +131,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void getMessage() {
-		final User user = controller.newUser("user", "test");
+		final User user = controller.newUser("user", "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		Message testMessage = null;
@@ -158,7 +158,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void changeNextMessage() {
-		final User user = controller.newUser("user", "test");
+		final User user = controller.newUser("user", "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message nextMessage = controller.newMessage(user.id, conversation.id, "TEST NEXt MESSAGE");
@@ -194,15 +194,36 @@ public class DerbyStoreTest {
 		assertTrue(
 				"Check user login",
 				user == null);
+	}*/
+	
+	@Test
+	public void checkMessageCount() {
+		final User user = controller.newUser("userpop", "testPassword");
+		int messageCount = -1;
+		int messageCountCheck = 0;
+		
+		try {
+			messageCount = ds.setUserMessageCount(user.id);
+			messageCount = ds.setUserMessageCount(user.id);
+			messageCountCheck = ds.getMessageCount(user.id);
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		System.out.println(messageCount);
+		
+		assertTrue("Increase Message Count",
+				messageCount == 2);
+		
+		assertTrue("Check Message Count",
+				messageCountCheck == 2);
+		
+		
 	}
 
 
 	// TODO: Add a way to get messages based on conversations and test it
 	// 		 Add a method to update the users involved for a conversation
-
-
-
-
-
 
 }

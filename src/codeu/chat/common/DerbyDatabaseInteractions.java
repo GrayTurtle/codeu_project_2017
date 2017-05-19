@@ -3,6 +3,7 @@ package codeu.chat.common;
 import codeu.chat.util.store.Store;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import codeu.chat.util.Uuid;
@@ -37,5 +38,12 @@ public interface DerbyDatabaseInteractions {
 	public void addMessage(Message m) throws SQLException;
 	
 	public Message getMessage(Uuid messageid) throws SQLException, IOException;
+	
+	// MESSAGE COUNT 
+	public int getMessageCount(Uuid uuid) throws SQLException;
+	
+	public int setUserMessageCount(Uuid userid) throws SQLException;
+	
+	public void addUserMessageCount(String uuid) throws SQLException;
 
 }

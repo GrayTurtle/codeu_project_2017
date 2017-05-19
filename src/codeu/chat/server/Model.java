@@ -120,6 +120,28 @@ public final class Model {
 	  
   return false;
   }
+  
+  public int getMessageCount(Uuid userid) {
+	  try {
+		  return ds.getMessageCount(userid);
+	  }
+	  catch (Exception ex) {
+		 ex.printStackTrace(); 
+	  }
+	 
+  return 0;
+  }
+  
+  public int setMessageCount(Uuid userid) {
+	  try {
+		  return ds.setUserMessageCount(userid);
+	  }
+	  catch (Exception ex) {
+		  
+	  }
+	  
+  return 0;
+  }
 
   public StoreAccessor<Uuid, User> userById() {
     return userById;

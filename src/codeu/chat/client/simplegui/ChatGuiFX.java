@@ -1,6 +1,7 @@
 package codeu.chat.client.simplegui;
 
 import codeu.chat.client.ClientUser;
+import java.io.File;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -23,6 +24,7 @@ import codeu.chat.common.User;
 import codeu.chat.common.Message;
 import codeu.chat.client.View;
 import codeu.chat.util.Logger;
+import codeu.chat.util.Uuid;
 
 public final class ChatGuiFX extends Application {
 
@@ -71,15 +73,17 @@ public final class ChatGuiFX extends Application {
     private ListView<String> conversations;
 
     // these hold the messages of a selected conversation to be displayed in the middle panel
-    private ObservableList<String> messageList;
-    private ListView<String> messages;
+    private ObservableList<TextFlow> messageList;
+    private ListView<TextFlow> messages;
 
     // these hold the users to be displayed on the left panel
-    private ObservableList<String> usersList;
-    private ListView<String> users;
+    private ObservableList<Text> usersList;
+    private ListView<Text> users;
 
     // field for the input of messages into a conversation
     private TextField input;
+
+    private Text userName;
 
     public void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
@@ -203,11 +207,11 @@ public final class ChatGuiFX extends Application {
 
         // initialize the contents of each panel (user, conversations, & messages)
         usersList = FXCollections.observableArrayList();
-        users = new ListView<String>(usersList);
+        users = new ListView<Text>(usersList);
         convoList = FXCollections.observableArrayList();
         conversations = new ListView<String>(convoList);
         messageList = FXCollections.observableArrayList();
-        messages = new ListView<String>(messageList);
+        messages = new ListView<TextFlow>(messageList);
 
         // add listener for when user presses add conversation & add to the conversation list
         addConvoButton.setOnAction(e -> addConversation(e));
@@ -253,10 +257,6 @@ public final class ChatGuiFX extends Application {
         thestage.setScene(signInScene);
         thestage.show();
 
-        // populate the users, conversations, messages panels from the past signins
-        fillMessagesList(clientContext.conversation.getCurrent());
-        fillConversationsList(conversations);
-        fillUserList(users);
     }
 
     /*
@@ -273,8 +273,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.signInUser(username, password))
+            if (clientContext.user.signInUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+                fillConversationsList(conversations);
+                fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -291,8 +296,13 @@ public final class ChatGuiFX extends Application {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (clientContext.user.addUser(username, password))
+            if (clientContext.user.addUser(username, password)) {
+            	 // populate the users, conversations, messages panels from the past signins
+            	fillMessagesList(clientContext.conversation.getCurrent());
+            	fillConversationsList(conversations);
+            	fillUserList(users);
             	thestage.setScene(mainScene);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -319,10 +329,16 @@ public final class ChatGuiFX extends Application {
             String name = dialog.showAndWait().get();
 
             // TODO: check for duplicate conversations & handle them
+            for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
+            	if (cs.title.equals(name)) {
+            		displayAlert("There is already a conversation with that name!");
+            		return;
+            	}
+            }
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-                convoList.addAll(name);
+                convoList.add(name);
             }
         } else {
             // user is not signed in
@@ -342,8 +358,10 @@ public final class ChatGuiFX extends Application {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
-        clientContext.conversation.setCurrent(selectedConvo);
-        updateCurrentConversation(selectedConvo);
+        if (selectedConvo != null) {
+	        clientContext.conversation.setCurrent(selectedConvo);
+	        updateCurrentConversation(selectedConvo);
+        }
     }
 
     /**
@@ -353,12 +371,12 @@ public final class ChatGuiFX extends Application {
     * @param index  index of selected conversation in the list of conversations
     */
     private ConversationSummary lookupByTitle(String title, int index) {
-        int localIndex = 0;
         for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-            if ((localIndex >= index) && cs.title.equals(title)) {
+        	// An exception was thrown when localIndex was used and tested in the following if statement.
+        	// Removing it seemed to fix the issue.
+            if (cs.title.equals(title)) {
                 return cs;
             }
-            localIndex++;
         }
         return null;
     }
@@ -391,11 +409,17 @@ public final class ChatGuiFX extends Application {
 
         } else {
             String messageText = input.getText();
-            messageList.addAll(input.getText());
+            Text inputText = new Text(messageText);
+            TextFlow inputFlow = new TextFlow(inputText);
+            messageList.addAll(inputFlow);
             if (!messageText.isEmpty() && messageText.length() > 0) {
+            	Uuid currentUserId = clientContext.user.getCurrent().id;
                 // add message to current conversation
-                clientContext.message.addMessage(clientContext.user.getCurrent().id,
+                clientContext.message.addMessage(currentUserId,
                     clientContext.conversation.getCurrentId(), messageText);
+
+                // increase user message count
+                clientContext.user.increaseMessageCount(currentUserId);
 
                 // populate the list of messages with the current conversation's updated messages
                 fillMessagesList(clientContext.conversation.getCurrent());
@@ -428,35 +452,43 @@ public final class ChatGuiFX extends Application {
     }
 
     /**
-    * Populates the list of messages to be displayed
+    * Populates the list of messages to be displayed and also checks if the sender needs to colored
     * @param conversation  the contents of the current conversation that the method uses to
     *                      to get usernames, time of creation, etc.
     */
     private void fillMessagesList(ConversationSummary conversation) {
-
         messages.getItems().clear();
 
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
+            userName = new Text(authorName + ": ");
 
-            final String displayString = String.format("%s: [%s]: %s",
-                ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
+            colorizeUsername(m.author);
 
-            messageList.addAll(displayString);
+            final String displayString = String.format("[%s]: %s", m.creation, m.content);
+
+            Text displayStringText = new Text(displayString);
+            TextFlow displayStringFlow = new TextFlow(userName, displayStringText);
+            messageList.addAll(displayStringFlow);
       }
     }
 
     /**
-    * Populates the list of users to be displayed
+    * Populates the list of users to be displayed and also checks if their names needs to colored
     * @param users  the current list of users that will be cleared & updated
     */
-    private void fillUserList(ListView<String> users) {
+    private void fillUserList(ListView<Text> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
 
+        User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
-            usersList.addAll(u.name);
+        	if (!Uuid.equals(u.id, currentUser.id)) {
+                userName = new Text(u.name);
+                colorizeUsername(u.id);
+        		usersList.add(userName);
+            }
         }
     }
 
@@ -470,5 +502,21 @@ public final class ChatGuiFX extends Application {
         fillConversationsList(conversations);
         clientContext.message.updateMessages(true);
         fillMessagesList(clientContext.conversation.getCurrent());
+    }
+
+    // TODO: add more colors
+    /**
+    * Colorizes user based on how many messages has been sent
+    * @param userID  the ID of the user to have their name colorized
+    */
+    private void colorizeUsername(Uuid userID) {
+        int messageCount = clientContext.user.getMessageCount(userID);
+        if (messageCount >= 10 && messageCount < 20) {
+            userName.setFill(Color.RED);
+        } else if (messageCount >= 20 && messageCount < 30) {
+            userName.setFill(Color.BLUE);
+        } else if (messageCount >= 30 && messageCount < 40) {
+            userName.setStyle("-fx-fill: linear-gradient(from 0% 0% to 100% 200%, repeat, aqua 0%, red 50%)");
+        }
     }
 }
