@@ -1,6 +1,7 @@
 package codeu.chat.client.simplegui;
 
 import codeu.chat.client.ClientUser;
+import java.io.File;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -72,15 +73,17 @@ public final class ChatGuiFX extends Application {
     private ListView<String> conversations;
 
     // these hold the messages of a selected conversation to be displayed in the middle panel
-    private ObservableList<String> messageList;
-    private ListView<String> messages;
+    private ObservableList<TextFlow> messageList;
+    private ListView<TextFlow> messages;
 
     // these hold the users to be displayed on the left panel
-    private ObservableList<String> usersList;
-    private ListView<String> users;
+    private ObservableList<Text> usersList;
+    private ListView<Text> users;
 
     // field for the input of messages into a conversation
     private TextField input;
+
+    private Text userName;
 
     public void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
@@ -204,11 +207,11 @@ public final class ChatGuiFX extends Application {
 
         // initialize the contents of each panel (user, conversations, & messages)
         usersList = FXCollections.observableArrayList();
-        users = new ListView<String>(usersList);
+        users = new ListView<Text>(usersList);
         convoList = FXCollections.observableArrayList();
         conversations = new ListView<String>(convoList);
         messageList = FXCollections.observableArrayList();
-        messages = new ListView<String>(messageList);
+        messages = new ListView<TextFlow>(messageList);
 
         // add listener for when user presses add conversation & add to the conversation list
         addConvoButton.setOnAction(e -> addConversation(e));
@@ -406,14 +409,17 @@ public final class ChatGuiFX extends Application {
 
         } else {
             String messageText = input.getText();
-            input.setText("");
-            messageList.addAll(input.getText());
+
+            Text inputText = new Text(messageText);
+            TextFlow inputFlow = new TextFlow(inputText);
+            messageList.addAll(inputFlow);
+
             if (!messageText.isEmpty() && messageText.length() > 0) {
             	Uuid currentUserId = clientContext.user.getCurrent().id;
                 // add message to current conversation
                 clientContext.message.addMessage(currentUserId,
                     clientContext.conversation.getCurrentId(), messageText);
-                
+
                 // increase user message count
                 clientContext.user.increaseMessageCount(currentUserId);
 
@@ -448,7 +454,7 @@ public final class ChatGuiFX extends Application {
     }
 
     /**
-    * Populates the list of messages to be displayed
+    * Populates the list of messages to be displayed and also checks if the sender needs to colored
     * @param conversation  the contents of the current conversation that the method uses to
     *                      to get usernames, time of creation, etc.
     */
@@ -458,27 +464,33 @@ public final class ChatGuiFX extends Application {
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
+            userName = new Text(authorName + ": ");
 
+            colorizeUsername(m.author);
 
-            final String displayString = String.format("%s: [%s]: %s",
-                ((authorName.isEmpty()) ? m.author : authorName), m.creation, m.content);
+            final String displayString = String.format("[%s]: %s", m.creation, m.content);
 
-            messageList.addAll(displayString);
+            Text displayStringText = new Text(displayString);
+            TextFlow displayStringFlow = new TextFlow(userName, displayStringText);
+            messageList.addAll(displayStringFlow);
       }
     }
 
     /**
-    * Populates the list of users to be displayed
+    * Populates the list of users to be displayed and also checks if their names needs to colored
     * @param users  the current list of users that will be cleared & updated
     */
-    private void fillUserList(ListView<String> users) {
+    private void fillUserList(ListView<Text> users) {
         clientContext.user.updateUsers();
         users.getItems().clear();
 
         User currentUser = clientContext.user.getCurrent();
         for (final User u : clientContext.user.getUsers()) {
-        	if (!Uuid.equals(u.id, currentUser.id))
-        		usersList.add(u.name);
+        	if (!Uuid.equals(u.id, currentUser.id)) {
+                userName = new Text(u.name);
+                colorizeUsername(u.id);
+        		usersList.add(userName);
+            }
         }
     }
 
@@ -492,7 +504,21 @@ public final class ChatGuiFX extends Application {
         fillConversationsList(conversations);
         clientContext.message.updateMessages(true);
         fillMessagesList(clientContext.conversation.getCurrent());
-        User currentUser = clientContext.user.getCurrent();
-        System.out.println("count: " + clientContext.user.getMessageCount(currentUser.id));
+    }
+
+    // TODO: add more colors
+    /**
+    * Colorizes user based on how many messages has been sent
+    * @param userID  the ID of the user to have their name colorized
+    */
+    private void colorizeUsername(Uuid userID) {
+        int messageCount = clientContext.user.getMessageCount(userID);
+        if (messageCount >= 10 && messageCount < 20) {
+            userName.setFill(Color.RED);
+        } else if (messageCount >= 20 && messageCount < 30) {
+            userName.setFill(Color.BLUE);
+        } else if (messageCount >= 30 && messageCount < 40) {
+            userName.setStyle("-fx-fill: linear-gradient(from 0% 0% to 100% 200%, repeat, aqua 0%, red 50%)");
+        }
     }
 }
