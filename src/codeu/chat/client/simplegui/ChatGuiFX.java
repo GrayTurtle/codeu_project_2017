@@ -17,6 +17,8 @@ import javafx.collections.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.control.Alert.AlertType;
 
+import java.util.Map;
+
 import codeu.chat.client.ClientContext;
 import codeu.chat.client.Controller;
 import codeu.chat.common.ConversationSummary;
@@ -25,6 +27,7 @@ import codeu.chat.common.Message;
 import codeu.chat.client.View;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Uuid;
+import codeu.chat.util.store.Store;
 
 public final class ChatGuiFX extends Application {
 
@@ -327,14 +330,13 @@ public final class ChatGuiFX extends Application {
 
             // get input and add the name of the convo
             String name = dialog.showAndWait().get();
-
-            // TODO: check for duplicate conversations & handle them
-            for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-            	if (cs.title.equals(name)) {
-            		displayAlert("There is already a conversation with that name!");
-            		return;
-            	}
-            }
+            
+            Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
+        	
+        	if (summariesSortedByCreationTime.containsValue(name)) {
+        		displayAlert("There is already a conversation with that name!");
+        		return;
+        	}
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
@@ -345,7 +347,7 @@ public final class ChatGuiFX extends Application {
             displayAlert("You're not signed in!");
         }
     }
-
+    
     /**
     * When the user clicks on a conversation in the right panel, it gets its index and name to
     * fetch its contents, which is a ConversationSummary object. Then it sets the current conversation
@@ -371,13 +373,21 @@ public final class ChatGuiFX extends Application {
     * @param index  index of selected conversation in the list of conversations
     */
     private ConversationSummary lookupByTitle(String title, int index) {
-        for (final ConversationSummary cs : clientContext.conversation.getConversationSummaries()) {
-        	// An exception was thrown when localIndex was used and tested in the following if statement.
-        	// Removing it seemed to fix the issue.
-            if (cs.title.equals(title)) {
-                return cs;
-            }
-        }
+    	Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
+    	Store<String, ConversationSummary> summariesSortedByTitle = clientContext.conversation.getConversationSummariesStore();
+    	
+    	/**
+    	 * This search for a ConversationSummary happens
+    	 * in constant time since summariesSortedByTitle.at()
+    	 * return an iterable with only one item, which is the
+    	 * value of the given key.
+    	 */
+    	if (summariesSortedByCreationTime.containsValue(title)) {
+    		for (ConversationSummary cs : summariesSortedByTitle.at(title)) {
+    			return cs;
+    		}
+    	}
+    	
         return null;
     }
 
@@ -409,7 +419,7 @@ public final class ChatGuiFX extends Application {
 
         } else {
             String messageText = input.getText();
-
+            input.setText("");
             Text inputText = new Text(messageText);
             TextFlow inputFlow = new TextFlow(inputText);
             messageList.addAll(inputFlow);
@@ -448,7 +458,7 @@ public final class ChatGuiFX extends Application {
         clientContext.conversation.updateAllConversations(false);
         conversations.getItems().clear();
 
-        for (final ConversationSummary conv : clientContext.conversation.getConversationSummaries()) {
+        for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.addAll(conv.title);
         }
     }

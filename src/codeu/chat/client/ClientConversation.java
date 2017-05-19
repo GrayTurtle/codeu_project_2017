@@ -15,8 +15,11 @@
 package codeu.chat.client;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
@@ -44,6 +47,27 @@ public final class ClientConversation {
   // This is the set of conversations known to the server, sorted by title.
   private Store<String, ConversationSummary> summariesSortedByTitle =
       new Store<>(String.CASE_INSENSITIVE_ORDER);
+  
+  
+  private Map<ConversationSummary, String> summariesSortedByCreationTime =
+	 new  TreeMap<ConversationSummary, String>(new sortByCreation());
+  
+  /**
+   * Implements Comparator that orders ConversationSummaries
+   * by their creation time when inserted into the TreeMap
+   * summariesSortedByCreationTime.
+   * @author malikg
+   *
+   */
+  class sortByCreation implements Comparator<ConversationSummary> {
+	  @Override
+	  public int compare(ConversationSummary a, ConversationSummary b) {
+		  if (a.creation.inMs() > b.creation.inMs()) return 1;
+		  else if (a.creation.inMs() < b.creation.inMs()) return -1;
+		  
+	  return 0;
+	  }
+  }
 
   public ClientConversation(Controller controller, View view, ClientUser userContext) {
     this.controller = controller;
@@ -164,13 +188,22 @@ public final class ClientConversation {
   }
 
   public int conversationsCount() {
-   System.out.println(this.getClass().toString() + " conversationsCount()");
+	  System.out.println(this.getClass().toString() + " conversationsCount()");
    return summariesByUuid.size();
   }
 
   public Iterable<ConversationSummary> getConversationSummaries() {
 	  System.out.println(this.getClass().toString() + " getConversationSummaries()");
     return summariesSortedByTitle.all();
+  }
+  
+  public Store<String, ConversationSummary> getConversationSummariesStore() {
+	  System.out.println(this.getClass().toString() + " getConversationSummaries()");
+    return summariesSortedByTitle;
+  }
+  
+  public Map<ConversationSummary, String> getSummariesByCreationTime() {
+	  return summariesSortedByCreationTime;
   }
 
   // Update the list of known Conversations.
@@ -184,6 +217,7 @@ public final class ClientConversation {
     for (final ConversationSummary cs : view.getAllConversations()) {
       summariesByUuid.put(cs.id, cs);
       summariesSortedByTitle.insert(cs.title, cs);
+      summariesSortedByCreationTime.put(cs, cs.title);
     }
 
     if (currentChanged) {
