@@ -432,9 +432,14 @@ public final class ChatGuiFX extends Application {
 
                 // increase user message count
                 clientContext.user.increaseMessageCount(currentUserId);
+                
+                // reorder conversations list if we have changed conversations
+                if (!clientContext.conversation.changedConversation())
+                	fillConversationsList(conversations);
+        
 
                 // populate the list of messages with the current conversation's updated messages
-                fillMessagesList(clientContext.conversation.getCurrent());
+                fillMessagesList(clientContext.conversation.getCurrent());    
             }
         }
     }

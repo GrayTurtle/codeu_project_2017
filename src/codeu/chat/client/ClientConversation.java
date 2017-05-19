@@ -37,6 +37,7 @@ public final class ClientConversation {
 
   private ConversationSummary currentSummary = null;
   private Conversation currentConversation = null;
+  private ConversationSummary prevSummary = null;
 
   private final ClientUser userContext;
   private ClientMessage messageContext = null;
@@ -120,6 +121,14 @@ public final class ClientConversation {
 	System.out.println(this.getClass().toString() + " showCurrent()");
     printConversation(currentSummary, userContext);
   }
+  
+  public boolean changedConversation() {
+	  System.out.println(this.getClass().toString() + " changedConversation()");
+	  
+	  boolean isChanged = prevSummary.equals(currentSummary);
+	  prevSummary = currentSummary;
+	  return isChanged;
+  }
 
   public void startConversation(String title, Uuid owner) {
 	System.out.println(this.getClass().toString() + " startConversation()");
@@ -141,6 +150,7 @@ public final class ClientConversation {
 
   public void setCurrent(ConversationSummary conv) { 
 	  System.out.println(this.getClass().toString() + " setCurrent()");
+	  prevSummary = currentSummary;
 	  currentSummary = conv; 
   }
 
@@ -172,6 +182,7 @@ public final class ClientConversation {
 
   private void updateCurrentConversation() {
 	System.out.println(this.getClass().toString() + " updateCurrentConversation()");
+	
     if (currentSummary == null) {
       currentConversation = null;
     } else {
