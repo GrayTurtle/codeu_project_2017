@@ -34,6 +34,7 @@ public final class ConversationSummary implements ListViewable {
       Uuid.SERIALIZER.write(out, value.owner);
       Time.SERIALIZER.write(out, value.creation);
       Serializers.STRING.write(out, value.title);
+      Uuid.SERIALIZER.write(out, value.lastMessage);
 
     }
 
@@ -44,7 +45,8 @@ public final class ConversationSummary implements ListViewable {
           Uuid.SERIALIZER.read(in),
           Uuid.SERIALIZER.read(in),
           Time.SERIALIZER.read(in),
-          Serializers.STRING.read(in)
+          Serializers.STRING.read(in),
+          Uuid.SERIALIZER.read(in)
       );
 
     }
@@ -54,14 +56,15 @@ public final class ConversationSummary implements ListViewable {
   public final Uuid owner;
   public final Time creation;
   public final String title;
+  public Uuid lastMessage;
 
-  public ConversationSummary(Uuid id, Uuid owner, Time creation, String title) {
+  public ConversationSummary(Uuid id, Uuid owner, Time creation, String title, Uuid lastMessage) {
 
     this.id = id;
     this.owner = owner;
     this.creation = creation;
     this.title = title;
-
+    this.lastMessage = lastMessage;
   }
 
   // How this object should appear in a user-viewable list

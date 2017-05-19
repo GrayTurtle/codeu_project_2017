@@ -324,5 +324,27 @@ public final class View implements BasicView, LogicalView{
 
   return messageCount;
   }
+  
+  public Message getMessageById(Uuid messageid) {
+	  Message message = null;
+	  
+	  try (final Connection connection = source.connect()) {
+		  Serializers.INTEGER.write(connection.out(), NetworkCode.GET_MESSAGE_BY_ID_REQUEST);
+		  Uuid.SERIALIZER.write(connection.out(), messageid);
+
+		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
+			  message = Message.SERIALIZER.read(connection.in());
+		  }
+		  else {
+		      LOG.error("Response from server failed.");
+		  }
+	  }
+	  catch (Exception ex) {
+	      System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	    }
+	  
+  return message;
+  }
 
 }

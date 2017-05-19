@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
+import codeu.chat.common.Message;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Method;
 import codeu.chat.util.Uuid;
@@ -54,7 +55,8 @@ public final class ClientConversation {
   
   /**
    * Implements Comparator that orders ConversationSummaries
-   * by their creation time (newest to oldest) when inserted into the TreeMap
+   * by the last message creation time of the conversation their  
+   * mapped to (newest to oldest) when inserted into the TreeMap
    * summariesSortedByCreationTime.
    * @author malikg
    *
@@ -62,9 +64,22 @@ public final class ClientConversation {
   class sortByCreation implements Comparator<ConversationSummary> {
 	  @Override
 	  public int compare(ConversationSummary a, ConversationSummary b) {
-		  if (a.creation.inMs() > b.creation.inMs()) return -1;
+		  
+		  if (!Uuid.equals(a.lastMessage, Uuid.NULL) && !Uuid.equals(b.lastMessage, Uuid.NULL)) {
+			  Message messageA = view.getMessageById(a.lastMessage);
+			  Message messageB = view.getMessageById(b.lastMessage);
+			  if (messageA.creation.inMs() > messageB.creation.inMs()) return -1;
+			  else if (messageA.creation.inMs() < messageB.creation.inMs()) return 1;
+			  
+		  return 0;
+		  }
+		  else if (!Uuid.equals(a.lastMessage, Uuid.NULL)) return -1;
+		  else if (!Uuid.equals(b.lastMessage, Uuid.NULL)) return 1;
+		  
+		  /*if (a.creation.inMs() > b.creation.inMs()) return -1;
 		  else if (a.creation.inMs() < b.creation.inMs()) return 1;
 		  
+	  return 0;*/
 	  return 0;
 	  }
   }
@@ -213,6 +228,8 @@ public final class ClientConversation {
 	  System.out.println(this.getClass().toString() + " updateAllConversations()");
     summariesByUuid.clear();
     summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
+    
+    summariesSortedByCreationTime = new TreeMap<ConversationSummary, String>(new sortByCreation());
 
     for (final ConversationSummary cs : view.getAllConversations()) {
       summariesByUuid.put(cs.id, cs);

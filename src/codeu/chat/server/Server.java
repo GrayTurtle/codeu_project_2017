@@ -290,6 +290,21 @@ public final class Server {
   		Serializers.INTEGER.write(out, NetworkCode.UPDATE_MESSAGE_COUNT_RESPONSE);
   		Serializers.INTEGER.write(out, messageCount);
   		
+  	}
+  	else if (type == NetworkCode.GET_MESSAGE_BY_ID_REQUEST) {
+  		final Uuid messageid = Uuid.SERIALIZER.read(in);
+  		Message message = null;
+  		
+  		try {
+  			message = model.getMessageById(messageid);
+  		}
+  		catch (Exception ex) {
+  			ex.printStackTrace();
+  		}
+  		
+  		Serializers.INTEGER.write(out, NetworkCode.GET_MESSAGE_BY_ID_RESPONSE);
+  		Message.SERIALIZER.write(out, message);
+  		
   	} else {
       // In the case that the message was not handled make a dummy message with
       // the type "NO_MESSAGE" so that the client still gets something.

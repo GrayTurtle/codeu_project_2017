@@ -14,6 +14,8 @@
 
 package codeu.chat.server;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Comparator;
 
 import codeu.chat.DerbyStore;
@@ -177,6 +179,10 @@ public final class Model {
   public StoreAccessor<Uuid, Conversation> conversationById() {
     return conversationById;
   }
+  
+  public Iterable<Conversation> getAllConversationsStored() {
+	  return ds.getAllConversations().all();
+  }
 
   public StoreAccessor<Time, Conversation> conversationByTime() {
     return conversationByTime;
@@ -203,6 +209,10 @@ public final class Model {
 
   public StoreAccessor<Uuid, Message> messageById() {
     return messageById;
+  }
+  
+  public Message getMessageById(Uuid messageid) throws IOException, SQLException {
+	  return ds.getMessage(messageid);
   }
 
   public StoreAccessor<Time, Message> messageByTime() {

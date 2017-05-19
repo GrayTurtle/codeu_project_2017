@@ -435,6 +435,9 @@ public final class ChatGuiFX extends Application {
 
                 // populate the list of messages with the current conversation's updated messages
                 fillMessagesList(clientContext.conversation.getCurrent());
+                
+                //reorder conversations list
+                fillConversationsList(conversations);
             }
         }
     }
@@ -459,7 +462,7 @@ public final class ChatGuiFX extends Application {
         conversations.getItems().clear();
 
         for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
-            convoList.addAll(conv.title);
+            convoList.add(conv.title);
         }
     }
 
