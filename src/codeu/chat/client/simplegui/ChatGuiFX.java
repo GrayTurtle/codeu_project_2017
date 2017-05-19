@@ -409,9 +409,11 @@ public final class ChatGuiFX extends Application {
 
         } else {
             String messageText = input.getText();
+
             Text inputText = new Text(messageText);
             TextFlow inputFlow = new TextFlow(inputText);
             messageList.addAll(inputFlow);
+
             if (!messageText.isEmpty() && messageText.length() > 0) {
             	Uuid currentUserId = clientContext.user.getCurrent().id;
                 // add message to current conversation

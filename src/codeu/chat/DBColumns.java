@@ -1,5 +1,13 @@
 package codeu.chat;
 
+/**
+ * Stores all of the column names for each table
+ * in the database.
+ * 
+ * Classes should not be instantiated.
+ * 
+ * @author malikg
+ */
 public class DBColumns {
 	
 	class UserTable {

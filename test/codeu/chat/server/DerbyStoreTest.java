@@ -1,16 +1,23 @@
 package codeu.chat.server;
 
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.junit.Before;
 
 import codeu.chat.DerbyStore;
 import codeu.chat.common.User;
+import codeu.chat.util.Time;
 import codeu.chat.util.Uuid;
 import codeu.chat.common.BasicController;
 import codeu.chat.common.Conversation;
 import codeu.chat.common.Message;
 
+/**
+ * 
+ * @author malikg
+ *
+ */
 public class DerbyStoreTest {
 
 	private DerbyStore ds;
@@ -24,9 +31,9 @@ public class DerbyStoreTest {
 		controller = new Controller(Uuid.NULL, model);
 	}
 
-	/*@Test
+	@Test
 	public void checkUserNameExists() {
-		final User user = controller.newUser("user", "testPassword");
+		final User user = controller.newUser("user" + Time.now(), "testPassword");
 		boolean userNameExists = false;
 
 		try {
@@ -42,7 +49,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetUser() {
-		final User user = controller.newUser("user", "testPassword");
+		final User user = controller.newUser("user"  + Time.now(), "testPassword");
 		User testUser = null;
 		try {
 			//ds.addUser(user);
@@ -70,7 +77,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void addAndGetConversation() { 
-		User user = controller.newUser("user", "testPassword");
+		User user = controller.newUser("user" + Time.now(), "testPassword");
 		Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		Conversation testConversation = null;
 
@@ -106,7 +113,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void updateMessagesForConversation() {
-		final User user = controller.newUser("user", "testPassword");
+		final User user = controller.newUser("user" + Time.now(), "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message firstMessage = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message lastMessage = controller.newMessage(user.id, conversation.id, "TEST LAST MESSAGE");
@@ -131,7 +138,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void getMessage() {
-		final User user = controller.newUser("user", "testPassword");
+		final User user = controller.newUser("user" + Time.now(), "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		Message testMessage = null;
@@ -158,7 +165,7 @@ public class DerbyStoreTest {
 
 	@Test
 	public void changeNextMessage() {
-		final User user = controller.newUser("user", "testPassword");
+		final User user = controller.newUser("user" + Time.now(), "testPassword");
 		final Conversation conversation = controller.newConversation("TEST CONVERSATION", user.id);
 		final Message message = controller.newMessage(user.id, conversation.id, "TEST FIRST MESSAGE");
 		final Message nextMessage = controller.newMessage(user.id, conversation.id, "TEST NEXt MESSAGE");
@@ -180,12 +187,12 @@ public class DerbyStoreTest {
 	
 	@Test
 	public void checkUserLogin() {
-		final User user = controller.newUser("bob", "bob");
+		String username = "bob" + Time.now();
+		final User user = controller.newUser(username, "testPassword");
 		User userTest = null;
 			
 		try {
-			//ds.addMessage(message);
-			userTest = ds.userLogin("bob", "bob");
+			userTest = ds.userLogin(username, "testPassword");
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
@@ -193,12 +200,12 @@ public class DerbyStoreTest {
 
 		assertTrue(
 				"Check user login",
-				user == null);
-	}*/
+				user != null);
+	}
 	
 	@Test
 	public void checkMessageCount() {
-		final User user = controller.newUser("userpop", "testPassword");
+		final User user = controller.newUser("userpop" + Time.now(), "testPassword");
 		int messageCount = -1;
 		int messageCountCheck = 0;
 		
@@ -210,9 +217,7 @@ public class DerbyStoreTest {
 		catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		
-		System.out.println(messageCount);
-		
+
 		assertTrue("Increase Message Count",
 				messageCount == 2);
 		
@@ -221,9 +226,5 @@ public class DerbyStoreTest {
 		
 		
 	}
-
-
-	// TODO: Add a way to get messages based on conversations and test it
-	// 		 Add a method to update the users involved for a conversation
 
 }
