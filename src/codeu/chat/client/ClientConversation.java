@@ -54,7 +54,7 @@ public final class ClientConversation {
   
   /**
    * Implements Comparator that orders ConversationSummaries
-   * by their creation time when inserted into the TreeMap
+   * by their creation time (newest to oldest) when inserted into the TreeMap
    * summariesSortedByCreationTime.
    * @author malikg
    *
@@ -62,8 +62,8 @@ public final class ClientConversation {
   class sortByCreation implements Comparator<ConversationSummary> {
 	  @Override
 	  public int compare(ConversationSummary a, ConversationSummary b) {
-		  if (a.creation.inMs() > b.creation.inMs()) return 1;
-		  else if (a.creation.inMs() < b.creation.inMs()) return -1;
+		  if (a.creation.inMs() > b.creation.inMs()) return -1;
+		  else if (a.creation.inMs() < b.creation.inMs()) return 1;
 		  
 	  return 0;
 	  }
