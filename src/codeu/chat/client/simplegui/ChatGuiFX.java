@@ -406,6 +406,7 @@ public final class ChatGuiFX extends Application {
 
         } else {
             String messageText = input.getText();
+            input.setText("");
             messageList.addAll(input.getText());
             if (!messageText.isEmpty() && messageText.length() > 0) {
             	Uuid currentUserId = clientContext.user.getCurrent().id;
