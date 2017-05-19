@@ -32,6 +32,7 @@ public final class User {
 
       Uuid.SERIALIZER.write(out, value.id);
       Serializers.STRING.write(out, value.name);
+      Serializers.STRING.write(out, value.password);
       Time.SERIALIZER.write(out, value.creation);
 
     }

@@ -68,11 +68,9 @@ public final class ClientUser {
 
   public boolean signInUser(String name, String password) {
     updateUsers();
-    
-    
-    // TODO: Add functionality to check if username combo is correct
-    User validUser = controller.checkUser(name, password);
-    
+
+    User validUser = view.checkUserLogin(name, password);
+
     if (validUser != null) {
 	    final User prev = current;
 	    if (name != null) {
@@ -83,8 +81,9 @@ public final class ClientUser {
 	    }
 	    return (prev != current);
     }
-    
-    System.out.println("Login was UNSUCCESSFUL due to your username and password combinatio of: " + name + " " + password);
+
+
+    System.out.println("Login was UNSUCCESSFUL due to your username and password combination of: " + name + " " + password);
     return false;
   }
 
@@ -98,22 +97,26 @@ public final class ClientUser {
     printUser(current);
   }
 
-  public void addUser(String name, String password) {
+  public boolean addUser(String name, String password) {
 	// TODO: check valid inputs for password OR hash it
     boolean validInputs = isValidInput(name);
-    // TODO: I'm hardcoding validInputs since it always return false. The function isValidInputs()
-    //		 needs to be looked at and changed.
-    validInputs = true;
+
 
     final User user = (validInputs) ? controller.newUser(name, password) : null;
-    
+
+    // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
+    current = user;
+
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");
+      return false;
     } else {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
       updateUsers();
     }
+
+    return true;
   }
 
   public void showAllUsers() {
@@ -144,7 +147,6 @@ public final class ClientUser {
   public void updateUsers() {
     usersById.clear();
     usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-
     for (final User user : view.getUsersExcluding(EMPTY)) {
       usersById.put(user.id, user);
       usersByName.insert(user.name, user);
@@ -163,5 +165,13 @@ public final class ClientUser {
   // Move to User's toString()
   public static void printUser(User user) {
     System.out.println(getUserInfoString(user));
+  }
+
+  public int getMessageCount(Uuid userid) {
+      return view.getMessageCount(userid);
+  }
+  
+  public int increaseMessageCount(Uuid userid) {
+	  return controller.updateMessageCount(userid);
   }
 }

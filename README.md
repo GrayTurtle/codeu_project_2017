@@ -16,8 +16,8 @@ All instructions here are relative to a LINUX environment. There will be some
 differences if you are working on a non-LINUX system. We will not support any
 other development environment.
 
-This project was built using JAVA 7. It is recommended that you install
-JAVA&nbsp;7 when working with this project.
+This project was built using JAVA 8. It is recommended that you install the
+STANDARD version of JAVA&nbsp;8 when working with this project.
 
 
 ## GETTING STARTED
@@ -38,7 +38,7 @@ JAVA&nbsp;7 when working with this project.
 
        ```
        $ sh run_server.sh <team_id> <team_secret> <port> <persistent-dir>
-       $ sh run_client.sh <host> <port>
+       $ sh run_simple_gui_client.sh <host> <port>
        ```
 
      You must specify the following startup arguments for `run_server.sh:
@@ -69,11 +69,9 @@ JAVA&nbsp;7 when working with this project.
        port number you have specified when you launched `run_server.sh`.
 
 All running images write informational and exceptional events to log files.
-The default setting for log messages is "INFO". You may change this to get
-more or fewer messages, and you are encouraged to add more LOG statements
-to the code. The logging is implemented in `codeu.chat.util.Logger.java`,
-which is built on top of `java.util.logging.Logger`, which you can refer to
-for more information.
+The default setting for log messages is "INFO". The logging is implemented 
+in `codeu.chat.util.Logger.java`, which is built on top of 
+`java.util.logging.Logger`, which you can refer to for more information.
 
 In addition to your team's client and server, the project also includes a
 Relay Server and a script that runs it (`run_relay.sh`).
@@ -111,7 +109,7 @@ Classes for building the server (`codeu.chat.ServerMain`).
 ### codeu.chat.relay
 
 Classes for building the Relay Server (`codeu.chat.RelayMain`). The Relay Server
-is not needed to get started.
+is not currently in use.
 
 ### codeu.chat.common
 
@@ -121,9 +119,10 @@ Classes that are shared by the clients and servers.
 
 Some basic infrastructure classes used throughout the project.
 
-## CURRENT CHANGES
+## OUR CHANGES (Team 27)
 
 - Swapped out the Java Swing client GUI with a JavaFX version
+- Updated the client-side and server-side controllers to interface with new GUI and database
 - Integrated a DERBY local database to save user's database
 
 ## PLANNED CHANGES
