@@ -19,9 +19,6 @@ public final class ChatGuiFX extends Application {
     // Holds the scene that user is currently viewing
     private Stage thestage;
 
-    // Scenes to hold all the elements for each page
-    private Scene signInScene;
-
     private MainChatPage mainPage;
 
     // variable that has the current state of the client (current user, conversation, etc)
@@ -49,8 +46,7 @@ public final class ChatGuiFX extends Application {
         mainPage = new MainChatPage();
 
         // Start up with the sign in page
-        signInScene = signInPage.getSignInScene();
-        thestage.setScene(signInScene);
+        thestage.setScene(signInPage.getSignInScene());
         thestage.show();
     }
 
@@ -65,7 +61,7 @@ public final class ChatGuiFX extends Application {
     }
 
     /**
-     *
+     * Getter for ClientContext.
      * @return
      */
     public static ClientContext getClientContext() {

@@ -133,6 +133,9 @@ public class SignInPage {
                 // Populates main page with data and switches to that scene
                 chatGuiFX.switchToMainPage();
             }
+            else {
+                errorLabel.setText(SIGNIN_ERROR_MESSAGE);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -154,6 +157,9 @@ public class SignInPage {
                 // Populates main page with data and switches to that scene
                 chatGuiFX.switchToMainPage();
             }
+            else {
+                errorLabel.setText(SIGNUP_ERROR_MESSAGE);
+            }
         }
         else {
             errorLabel.setText(BADCHAR_ERROR_MESSAGE);
@@ -161,7 +167,7 @@ public class SignInPage {
     }
 
     /**
-     *
+     * Gets the collection of UI elements making up the SignIn Page
      * @return
      */
     public Scene getSignInScene() {
