@@ -21,12 +21,11 @@ import javafx.scene.text.Font;
  */
 public class SignInPage {
 
-    private static final String SIGNIN_ERROR_MESSAGE = "Your username or password does not match. Have you signed up yet?";
-    private static final String SIGNUP_ERROR_MESSAGE = "Sorry, that username already exists. Please choose a different one.";
-    private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
-
-    private ChatGuiFX chatGuiFX;        // Handles different data and transition between scenes
+    // Handles different data and transition between scenes
+    private ChatGuiFX chatGuiFX;
     private static ClientContext clientContext;
+
+    // Collection of all of the UI elements on this page
     private Scene signInScene;
 
     // Takes input for username and password for sign in/up
@@ -36,6 +35,10 @@ public class SignInPage {
     // Displays error messages for when the user can't sign in (and why)
     private Label errorLabel;
 
+    // Error messages
+    private static final String SIGNIN_ERROR_MESSAGE = "Your username or password does not match. Have you signed up yet?";
+    private static final String SIGNUP_ERROR_MESSAGE = "Sorry, that username already exists. Please choose a different one.";
+    private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
 
     public SignInPage(ChatGuiFX chatGuiFX, ClientContext clientContext) {
 
@@ -54,7 +57,6 @@ public class SignInPage {
         buttonBox.setPrefWidth(80);
 
         // Set Pane alignments
-
         signInLabelPane.setAlignment(Pos.BOTTOM_CENTER);
         inputMasterBox.setAlignment(Pos.CENTER);
         inputVBox.setAlignment(Pos.CENTER);
@@ -80,11 +82,10 @@ public class SignInPage {
         signInButton.setMinWidth(buttonBox.getPrefWidth());
         signUpButton.setMinWidth(buttonBox.getPrefWidth());
 
-        // Initialize event handlers
         signInButton.setOnAction(e-> signInButtonClicked(e));
         signUpButton.setOnAction(e -> signUpButtonClicked(e));
 
-        // Set up password fields
+        // Set up text entry fields
         userInput = new TextField();
         passInput = new PasswordField();
         userInput.setPromptText("Username");
@@ -108,13 +109,14 @@ public class SignInPage {
         // Add buttons to a VBox to one on top of the other
         buttonBox.getChildren().add(signInButton);
         buttonBox.getChildren().add(signUpButton);
-        inputMasterBox.getChildren().add(inputVBox);
+
         // Add that VBox and buttons to the inputMasterBox
+        inputMasterBox.getChildren().add(inputVBox);
         inputMasterBox.getChildren().add(buttonBox);
 
+        // Add final elements to the pane
         signInPane.setTop(signInLabelPane);
         signInPane.setBottom(errorLabel);
-        // Add labels and input box to the pane
         signInPane.setCenter(inputMasterBox);
 
         signInScene = new Scene(signInPane, ChatGuiFX.WINDOW_WIDTH, ChatGuiFX.WINDOW_HEIGHT);

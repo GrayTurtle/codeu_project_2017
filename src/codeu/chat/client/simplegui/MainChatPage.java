@@ -27,8 +27,10 @@ import java.util.Map;
  */
 public class MainChatPage {
 
-    private Scene mainChatScene;
     private static ClientContext clientContext;
+
+    // Collection of all UI elements on the page
+    private Scene mainChatScene;
 
     // title of current/selected conversation
     private Text chatTitle;
@@ -48,6 +50,7 @@ public class MainChatPage {
     // field for the input of messages into a conversation
     private TextField input;
 
+    // Allows for colorized text
     private Text userName;
 
     public MainChatPage(ClientContext clientContext) {
