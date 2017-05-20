@@ -26,6 +26,7 @@ public class SignInPage {
     private static final String BADCHAR_ERROR_MESSAGE = "Usernames and passwords can only be composed of letters and numbers, no special characters.";
 
     private ChatGuiFX chatGuiFX;        // Handles different data and transition between scenes
+    private static ClientContext clientContext;
     private Scene signInScene;
 
     // Takes input for username and password for sign in/up
@@ -36,9 +37,10 @@ public class SignInPage {
     private Label errorLabel;
 
 
-    public SignInPage(ChatGuiFX chatGuiFX) {
+    public SignInPage(ChatGuiFX chatGuiFX, ClientContext clientContext) {
 
         this.chatGuiFX = chatGuiFX;
+        SignInPage.clientContext = clientContext;
 
         // Initialize panes
         BorderPane signInPane = new BorderPane();
@@ -128,7 +130,7 @@ public class SignInPage {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (ChatGuiFX.getClientContext().user.signInUser(username, password)) {
+            if (clientContext.user.signInUser(username, password)) {
 
                 // Populates main page with data and switches to that scene
                 chatGuiFX.switchToMainPage();
@@ -152,7 +154,7 @@ public class SignInPage {
         String password = passInput.getText();
 
         if (ClientUser.isValidInput(username) && ClientUser.isValidInput(password)) {
-            if (ChatGuiFX.getClientContext().user.addUser(username, password)) {
+            if (clientContext.user.addUser(username, password)) {
 
                 // Populates main page with data and switches to that scene
                 chatGuiFX.switchToMainPage();

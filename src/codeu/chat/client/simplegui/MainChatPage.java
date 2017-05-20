@@ -1,5 +1,6 @@
 package codeu.chat.client.simplegui;
 
+import codeu.chat.client.ClientContext;
 import codeu.chat.common.ConversationSummary;
 import codeu.chat.common.Message;
 import codeu.chat.common.User;
@@ -27,6 +28,7 @@ import java.util.Map;
 public class MainChatPage {
 
     private Scene mainChatScene;
+    private static ClientContext clientContext;
 
     // title of current/selected conversation
     private Text chatTitle;
@@ -48,7 +50,9 @@ public class MainChatPage {
 
     private Text userName;
 
-    public MainChatPage() {
+    public MainChatPage(ClientContext clientContext) {
+
+        MainChatPage.clientContext = clientContext;
 
         // holds the client
         HBox hboxClient = new HBox();
@@ -134,7 +138,7 @@ public class MainChatPage {
      * to the list of conversations to be displayed.
      */
     private void addConversation(ActionEvent e) {
-        if (ChatGuiFX.getClientContext().user.hasCurrent()) {
+        if (clientContext.user.hasCurrent()) {
             // popup for the user to add a conversation
             TextInputDialog dialog = new TextInputDialog("Name your conversation!");
             dialog.setTitle(" ");
@@ -143,7 +147,7 @@ public class MainChatPage {
             // get input and add the name of the convo
             String name = dialog.showAndWait().get();
 
-            Map<ConversationSummary, String> summariesSortedByCreationTime = ChatGuiFX.getClientContext().conversation.getSummariesByCreationTime();
+            Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
 
             if (summariesSortedByCreationTime.containsValue(name)) {
                 displayAlert("There is already a conversation with that name!");
@@ -151,7 +155,7 @@ public class MainChatPage {
             }
 
             if (!name.isEmpty() && name.length() > 0) {
-                ChatGuiFX.getClientContext().conversation.startConversation(name, ChatGuiFX.getClientContext().user.getCurrent().id);
+                clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
                 convoList.add(name);
             }
         } else {
@@ -173,7 +177,7 @@ public class MainChatPage {
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
         if (selectedConvo != null) {
-            ChatGuiFX.getClientContext().conversation.setCurrent(selectedConvo);
+            clientContext.conversation.setCurrent(selectedConvo);
             updateCurrentConversation(selectedConvo);
         }
     }
@@ -185,8 +189,8 @@ public class MainChatPage {
      * @param index  index of selected conversation in the list of conversations
      */
     private ConversationSummary lookupByTitle(String title, int index) {
-        Map<ConversationSummary, String> summariesSortedByCreationTime = ChatGuiFX.getClientContext().conversation.getSummariesByCreationTime();
-        Store<String, ConversationSummary> summariesSortedByTitle = ChatGuiFX.getClientContext().conversation.getConversationSummariesStore();
+        Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
+        Store<String, ConversationSummary> summariesSortedByTitle = clientContext.conversation.getConversationSummariesStore();
 
         /**
          * This search for a ConversationSummary happens
@@ -221,11 +225,11 @@ public class MainChatPage {
      * message pops up.
      */
     private void sendMessage(ActionEvent e) {
-        if (!ChatGuiFX.getClientContext().user.hasCurrent()) {
+        if (!clientContext.user.hasCurrent()) {
             // if the user is not signed in
             displayAlert("You're not signed in!");
 
-        } else if (!ChatGuiFX.getClientContext().conversation.hasCurrent()) {
+        } else if (!clientContext.conversation.hasCurrent()) {
             // if the user did not select or add a conversation
             displayAlert("Add or click a conversation on the right!");
 
@@ -237,16 +241,16 @@ public class MainChatPage {
             messageList.addAll(inputFlow);
 
             if (!messageText.isEmpty() && messageText.length() > 0) {
-                Uuid currentUserId = ChatGuiFX.getClientContext().user.getCurrent().id;
+                Uuid currentUserId = clientContext.user.getCurrent().id;
                 // add message to current conversation
-                ChatGuiFX.getClientContext().message.addMessage(currentUserId,
-                        ChatGuiFX.getClientContext().conversation.getCurrentId(), messageText);
+                clientContext.message.addMessage(currentUserId,
+                        clientContext.conversation.getCurrentId(), messageText);
 
                 // increase user message count
-                ChatGuiFX.getClientContext().user.increaseMessageCount(currentUserId);
+                clientContext.user.increaseMessageCount(currentUserId);
 
                 // populate the list of messages with the current conversation's updated messages
-                fillMessagesList(ChatGuiFX.getClientContext().conversation.getCurrent());
+                fillMessagesList(clientContext.conversation.getCurrent());
 
                 //reorder conversations list
                 fillConversationsList(conversations);
@@ -270,10 +274,10 @@ public class MainChatPage {
      * @param conversations  the current conversations that will be cleared & updated
      */
     private void fillConversationsList(ListView<String> conversations) {
-        ChatGuiFX.getClientContext().conversation.updateAllConversations(false);
+        clientContext.conversation.updateAllConversations(false);
         conversations.getItems().clear();
 
-        for (final ConversationSummary conv : ChatGuiFX.getClientContext().conversation.getSummariesByCreationTime().keySet()) {
+        for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.add(conv.title);
         }
     }
@@ -286,9 +290,9 @@ public class MainChatPage {
     private void fillMessagesList(ConversationSummary conversation) {
         messages.getItems().clear();
 
-        for (final Message m : ChatGuiFX.getClientContext().message.getConversationContents(conversation)) {
+        for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
-            final String authorName = ChatGuiFX.getClientContext().user.getName(m.author);
+            final String authorName = clientContext.user.getName(m.author);
             userName = new Text(authorName + ": ");
 
             colorizeUsername(m.author);
@@ -306,11 +310,11 @@ public class MainChatPage {
      * @param users  the current list of users that will be cleared & updated
      */
     private void fillUserList(ListView<Text> users) {
-        ChatGuiFX.getClientContext().user.updateUsers();
+        clientContext.user.updateUsers();
         users.getItems().clear();
 
-        User currentUser = ChatGuiFX.getClientContext().user.getCurrent();
-        for (final User u : ChatGuiFX.getClientContext().user.getUsers()) {
+        User currentUser = clientContext.user.getCurrent();
+        for (final User u : clientContext.user.getUsers()) {
             if (!Uuid.equals(u.id, currentUser.id)) {
                 userName = new Text(u.name);
                 colorizeUsername(u.id);
@@ -327,8 +331,8 @@ public class MainChatPage {
     private void updateGUI(ActionEvent e) {
         fillUserList(users);
         fillConversationsList(conversations);
-        ChatGuiFX.getClientContext().message.updateMessages(true);
-        fillMessagesList(ChatGuiFX.getClientContext().conversation.getCurrent());
+        clientContext.message.updateMessages(true);
+        fillMessagesList(clientContext.conversation.getCurrent());
     }
 
     // TODO: add more colors
@@ -337,7 +341,7 @@ public class MainChatPage {
      * @param userID  the ID of the user to have their name colorized
      */
     private void colorizeUsername(Uuid userID) {
-        int messageCount = ChatGuiFX.getClientContext().user.getMessageCount(userID);
+        int messageCount = clientContext.user.getMessageCount(userID);
         if (messageCount >= 10 && messageCount < 20) {
             userName.setFill(Color.RED);
         } else if (messageCount >= 20 && messageCount < 30) {
@@ -360,7 +364,7 @@ public class MainChatPage {
      */
     public void populate() {
 
-        fillMessagesList(ChatGuiFX.getClientContext().conversation.getCurrent());
+        fillMessagesList(clientContext.conversation.getCurrent());
         fillConversationsList(conversations);
         fillUserList(users);
     }

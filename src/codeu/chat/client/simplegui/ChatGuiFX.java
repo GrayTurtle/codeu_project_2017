@@ -1,7 +1,6 @@
 package codeu.chat.client.simplegui;
 
 import javafx.application.Application;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import codeu.chat.client.ClientContext;
@@ -42,8 +41,8 @@ public final class ChatGuiFX extends Application {
         this.thestage = primaryStage;
 
         // Instantiate classes for different pages
-        SignInPage signInPage = new SignInPage(this);
-        mainPage = new MainChatPage();
+        SignInPage signInPage = new SignInPage(this, ChatGuiFX.clientContext);
+        mainPage = new MainChatPage(ChatGuiFX.clientContext);
 
         // Start up with the sign in page
         thestage.setScene(signInPage.getSignInScene());
@@ -58,13 +57,5 @@ public final class ChatGuiFX extends Application {
 
         mainPage.populate();
         thestage.setScene(mainPage.getMainChatScene());
-    }
-
-    /**
-     * Getter for ClientContext.
-     * @return
-     */
-    public static ClientContext getClientContext() {
-        return clientContext;
     }
 }
