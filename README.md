@@ -17,7 +17,7 @@ differences if you are working on a non-LINUX system. We will not support any
 other development environment.
 
 This project was built using JAVA 8. It is recommended that you install the
-STANDARD version of JAVA&nbsp;8 when working with this project.
+standard Oracle version of [JAVA&nbsp;8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)  when working with this project.
 
 
 ## GETTING STARTED
@@ -73,7 +73,7 @@ The default setting for log messages is "INFO". The logging is implemented
 in `codeu.chat.util.Logger.java`, which is built on top of 
 `java.util.logging.Logger`, which you can refer to for more information.
 
-In addition to your team's client and server, the project also includes a
+In addition to the client and server, this project also includes a
 Relay Server and a script that runs it (`run_relay.sh`).
 This is not needed to get started with the project.
 
@@ -124,8 +124,7 @@ Some basic infrastructure classes used throughout the project.
 - Swapped out the Java Swing client GUI with a JavaFX version
 - Updated the client-side and server-side controllers to interface with new GUI and database
 - Integrated a DERBY local database to save user's database
+- User's names are displayed in different colors depending on how many messages they've sent
 
 ## PLANNED CHANGES
-
-- Gamification
 
