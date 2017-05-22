@@ -116,16 +116,25 @@ final class ServerMain {
     	@Override 
     	public void run() {
     		LOG.info("Established connection...");
-    		while (true) {
+    		    ConnectionSource serverSource1 = null;
     			try {
-    				final ConnectionSource serverSource1 = ServerConnectionSource.forPort(2007);
+    				serverSource1 = ServerConnectionSource.forPort(2008);
+    			}
+    			catch (IOException ex) {
+    				 LOG.error(ex, "Failed to create server on port");
+    			}
+        		while (true) {
+    			try {
     				final Connection connection = serverSource1.connect();
+    				LOG.info("Handling a new client!");
     				Runnable handleClients = new Runnable() {
     					@Override
     					public void run() {
+    						LOG.info("About to run a new client!");
     						server.handleConnection(connection);
     					}	
     				};
+    				//HandleClients test = new HandleClients(connection, server);
     				clientProcessingPool.submit(handleClients);
     			}
     			catch (IOException ex) {
@@ -139,5 +148,22 @@ final class ServerMain {
     cycleServer.start();
   }
   
+  /*class HandleClients implements Runnable {
+	  
+	  Connection serverSocket;
+	  Server server;
+	  
+	  public HandleClients(Connection serverSocket, Server server) {
+		  this.serverSocket = serverSocket;
+		  this.server = server;
+	  }
+	  
+	  @Override
+	  public void run() {
+		  LOG.info("HANDLING A CLIENT");
+		  server.handleConnection(serverSocket);
+	  }
+	  
+  }*/
 
 }

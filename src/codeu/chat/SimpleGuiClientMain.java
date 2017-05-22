@@ -44,21 +44,29 @@ final class SimpleGuiClientMain {
 
     final RemoteAddress address = RemoteAddress.parse(args[0]);
 
-    try (
-      final ConnectionSource source = new ClientConnectionSource(address.host, address.port)
-    ) {
-      final Controller controller = new Controller(source);
-      final View view = new View(source);
-
-      LOG.info("Creating client...");
-      
-
-      runClient(controller, view, args);
-
-    } catch (Exception ex) {
-      System.out.println("ERROR: Exception setting up client. Check log for details.");
-      LOG.error(ex, "Exception setting up client.");
-    }
+    Runnable runClient = new Runnable() {
+    	@Override 
+    	public void run() {
+		    try (
+		      final ConnectionSource source = new ClientConnectionSource(address.host, 2008)
+		    ) {
+		      final Controller controller = new Controller(source);
+		      final View view = new View(source);
+		
+		      LOG.info("Creating client...");
+		      
+		
+		      runClient(controller, view, args);
+		
+		    } catch (Exception ex) {
+		      System.out.println("ERROR: Exception setting up client. Check log for details.");
+		      LOG.error(ex, "Exception setting up client.");
+		    }
+    	}
+    };
+    
+    Thread client = new Thread(runClient);
+    client.start();
   }
 
   private static void runClient(Controller controller, View view, String [] args) {

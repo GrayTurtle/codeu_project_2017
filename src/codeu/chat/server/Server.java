@@ -90,38 +90,38 @@ public final class Server {
   }
 
   public void handleConnection(final Connection connection) {
-    timeline.scheduleNow(new Runnable() {
-      @Override
-      public void run() {
-        try {
-        
-          BufferedReader in = new BufferedReader( new InputStreamReader(connection.in()));
-          
-          while (true) {
-	          if (in.ready()) {
-	        	
-	          LOG.info("Handling connection...");
-	
-	          final boolean success = onMessage(
-	              connection.in(),
-	              connection.out());
-	
-	          LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
-	          }
-          }
-        } catch (Exception ex) {
-
-          LOG.error(ex, "Exception while handling connection.");
-
-        }
-
-        /*try {
-          connection.close();
-        } catch (Exception ex) {
-          LOG.error(ex, "Exception while closing connection.");
-        }*/
-      }
-    });
+	  try {
+	  BufferedReader in = new BufferedReader( new InputStreamReader(connection.in()));
+	  	while (true) {
+	  		if (in.ready()) {
+					    timeline.scheduleNow(new Runnable() {
+					      @Override
+					      public void run() {
+					        try {
+						          //LOG.info("Handling connection...");
+						
+						          final boolean success = onMessage(
+						              connection.in(),
+						              connection.out());
+			
+						          LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
+					        } catch (Exception ex) {
+					          LOG.error(ex, "Exception while handling connection.");
+					        }
+					
+					        /*try {
+					          connection.close();
+					        } catch (Exception ex) {
+					          LOG.error(ex, "Exception while closing connection.");
+					        }*/
+					      }
+				});
+	  		}
+	  	}
+	  }
+	  catch (IOException ex) {
+		  LOG.error("Error in creating buffer", ex);
+	  }
   }
 
   private boolean onMessage(InputStream in, OutputStream out) throws IOException {

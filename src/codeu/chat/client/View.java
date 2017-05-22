@@ -14,6 +14,9 @@
 
 package codeu.chat.client;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -41,9 +44,44 @@ public final class View implements BasicView, LogicalView{
   private final static Logger.Log LOG = Logger.newLog(View.class);
 
   private final ConnectionSource source;
+  
+  private Connection test;
+  
+  class ClientConnection implements Runnable {
+	  Connection source;
+	  BufferedReader in;
+	  
+	  public ClientConnection(Connection source) {
+		  this.source = source;
+	  }
+
+	  @Override()
+	  public void run() {
+		  try {
+			  in = new BufferedReader(new InputStreamReader(source.in()));
+			  while (true) {
+				  if (in.ready()) {
+					  System.out.println("Hiiiiiiiiii+++++++++++++++++++++++++++++++++++++++++");
+				  }
+			  }
+		  }
+		  catch (IOException ex) {
+			  LOG.error("Buffered Reader did not work", ex);
+		  }
+	  }
+  }
 
   public View(ConnectionSource source) {
     this.source = source;
+    try {
+    	this.test = source.connect();
+    	Thread client = new Thread(new ClientConnection(test));
+    	System.out.println("Hiiiiiiiiii");
+    	client.start();
+    }
+    catch (IOException ex) {
+		  LOG.error("Buffered Reader did not work", ex);
+	  }
   }
 
   @Override
@@ -284,16 +322,18 @@ public final class View implements BasicView, LogicalView{
   public User checkUserLogin(String name, String password) {
 	  User validUser = null;
 
-	  try (final Connection connection = source.connect()) {
-		  Serializers.INTEGER.write(connection.out(), NetworkCode.CHECK_USER_REQUEST);
-		  Serializers.STRING.write(connection.out(), name);
-		  Serializers.STRING.write(connection.out(), password);
+	  System.out.println("Hiii------------------------2");
+	 try {
+		  Serializers.INTEGER.write(test.out(), NetworkCode.CHECK_USER_REQUEST);
+		  Serializers.STRING.write(test.out(), name);
+		  Serializers.STRING.write(test.out(), password);
 
-		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.CHECK_USER_RESPONSE) {
-			  validUser = Serializers.nullable(User.SERIALIZER).read(connection.in());
+		  if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+			  validUser = Serializers.nullable(User.SERIALIZER).read(test.in());
 		  } else {
 		      LOG.error("Response from server failed.");
 		  }
+		  System.out.println("Hiii------------------------");
 
 	  } catch (Exception ex) {
 		  System.out.println("ERROR: Exception during call on server. Check log for details.");
