@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+
 import codeu.chat.common.User;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Uuid;
@@ -56,7 +57,16 @@ public final class ClientUser {
     boolean validInput = Pattern.matches("[a-zA-Z0-9]+", userInput);
 
     return validInput;
+
   }
+
+
+  // Validate a user input string
+  static public boolean isValidInput(String userInput) {
+
+    return Pattern.matches("[a-zA-Z0-9]+&&[^/s',;]", userInput);
+  }
+
 
   public boolean hasCurrent() {
     return (current != null);
@@ -103,6 +113,7 @@ public final class ClientUser {
 
 
     final User user = (validInputs) ? controller.newUser(name, password) : null;
+
 
     // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
     current = user;

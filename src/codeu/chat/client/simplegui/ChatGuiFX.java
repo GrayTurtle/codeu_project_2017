@@ -1,5 +1,6 @@
 package codeu.chat.client.simplegui;
 
+import codeu.chat.client.ClientUser;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
