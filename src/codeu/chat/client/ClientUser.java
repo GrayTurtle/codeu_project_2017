@@ -67,7 +67,7 @@ public final class ClientUser {
   }
 
   public boolean signInUser(String name, String password) {
-    updateUsers();
+    //updateUsers();
 
     User validUser = view.checkUserLogin(name, password);
 

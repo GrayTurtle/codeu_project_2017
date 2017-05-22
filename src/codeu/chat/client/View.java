@@ -43,16 +43,16 @@ public final class View implements BasicView, LogicalView{
 
   private final static Logger.Log LOG = Logger.newLog(View.class);
 
-  private final ConnectionSource source;
+  private final Connection source;
   
   private Connection test;
   
   class ClientConnection implements Runnable {
-	  Connection source;
+	  Connection source2;
 	  BufferedReader in;
 	  
 	  public ClientConnection(Connection source) {
-		  this.source = source;
+		  this.source2 = source;
 	  }
 
 	  @Override()
@@ -61,44 +61,41 @@ public final class View implements BasicView, LogicalView{
 			  in = new BufferedReader(new InputStreamReader(source.in()));
 			  while (true) {
 				  if (in.ready()) {
-					  if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
-						  User validUser = Serializers.nullable(User.SERIALIZER).read(test.in());
+					  if (Serializers.INTEGER.read(source.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+						  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
 						  System.out.println((validUser != null) ?  validUser.name : " valid user is null -------------------");
 					  }
 				  }
+				  Thread.sleep(500);
 			  }
 		  }
 		  catch (IOException ex) {
 			  LOG.error("Buffered Reader did not work", ex);
 		  }
+		  catch (InterruptedException ex) {
+			  LOG.error("Thread could not sleep", ex);
+		  }
 	  }
   }
 
-  public View(ConnectionSource source) {
+  public View(Connection source) {
     this.source = source;
-    try {
-    	this.test = source.connect();
-    	Thread client = new Thread(new ClientConnection(test));
-    	System.out.println("Hiiiiiiiiii");
-    	client.start();
-    }
-    catch (IOException ex) {
-		  LOG.error("Buffered Reader did not work", ex);
-	  }
+    Thread client = new Thread(new ClientConnection(source));
+    client.start();
   }
 
   @Override
   public Collection<User> getUsers(Collection<Uuid> ids) {
-
+	 System.out.println("HERE 1");
     final Collection<User> users = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_USERS_BY_ID_REQUEST);
-      Serializers.collection(Uuid.SERIALIZER).write(connection.out(), ids);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_USERS_BY_ID_REQUEST);
+      Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_USERS_BY_ID_RESPONSE) {
-        users.addAll(Serializers.collection(User.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USERS_BY_ID_RESPONSE) {
+        users.addAll(Serializers.collection(User.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -113,15 +110,15 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<ConversationSummary> getAllConversations() {
-
+	  System.out.println("HERE 2");
     final Collection<ConversationSummary> summaries = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_ALL_CONVERSATIONS_REQUEST);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_ALL_CONVERSATIONS_REQUEST);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) {
-        summaries.addAll(Serializers.collection(ConversationSummary.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) {
+        summaries.addAll(Serializers.collection(ConversationSummary.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -136,16 +133,16 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Conversation> getConversations(Collection<Uuid> ids) {
-
+	  System.out.println("HERE 3");
     final Collection<Conversation> conversations = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_CONVERSATIONS_BY_ID_REQUEST);
-      Serializers.collection(Uuid.SERIALIZER).write(connection.out(), ids);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_CONVERSATIONS_BY_ID_REQUEST);
+      Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_CONVERSATIONS_BY_ID_RESPONSE) {
-        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_CONVERSATIONS_BY_ID_RESPONSE) {
+        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -159,16 +156,15 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Message> getMessages(Collection<Uuid> ids) {
-
+	  System.out.println("HERE 4");
     final Collection<Message> messages = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_MESSAGES_BY_ID_REQUEST);
+      Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_MESSAGES_BY_ID_REQUEST);
-      Serializers.collection(Uuid.SERIALIZER).write(connection.out(), ids);
-
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_MESSAGES_BY_ID_RESPONSE) {
-        messages.addAll(Serializers.collection(Message.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGES_BY_ID_RESPONSE) {
+        messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -182,15 +178,15 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Uuid getUserGeneration() {
-
+	  System.out.println("HERE 5");
     Uuid generation = Uuid.NULL;
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_USER_GENERATION_REQUEST);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_USER_GENERATION_REQUEST);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_USER_GENERATION_RESPONSE) {
-        generation = Uuid.SERIALIZER.read(connection.in());
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USER_GENERATION_RESPONSE) {
+        generation = Uuid.SERIALIZER.read(source.in());
       } else {
         LOG.error("Response from server failed");
       }
@@ -204,16 +200,16 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<User> getUsersExcluding(Collection<Uuid> ids) {
-
+	  System.out.println("HERE 6");
     final Collection<User> users = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_USERS_EXCLUDING_REQUEST);
-      Serializers.collection(Uuid.SERIALIZER).write(connection.out(), ids);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_USERS_EXCLUDING_REQUEST);
+      Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_USERS_EXCLUDING_RESPONSE) {
-        users.addAll(Serializers.collection(User.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USERS_EXCLUDING_RESPONSE) {
+        users.addAll(Serializers.collection(User.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -227,17 +223,17 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Conversation> getConversations(Time start, Time end) {
-
+	  System.out.println("HERE 7");
     final Collection<Conversation> conversations = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_CONVERSATIONS_BY_TIME_REQUEST);
-      Time.SERIALIZER.write(connection.out(), start);
-      Time.SERIALIZER.write(connection.out(), end);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_CONVERSATIONS_BY_TIME_REQUEST);
+      Time.SERIALIZER.write(source.out(), start);
+      Time.SERIALIZER.write(source.out(), end);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_CONVERSATIONS_BY_TIME_RESPONSE) {
-        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_CONVERSATIONS_BY_TIME_RESPONSE) {
+        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -251,16 +247,16 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Conversation> getConversations(String filter) {
-
+	  System.out.println("HERE 8");
     final Collection<Conversation> conversations = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_CONVERSATIONS_BY_TITLE_REQUEST);
-      Serializers.STRING.write(connection.out(), filter);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_CONVERSATIONS_BY_TITLE_REQUEST);
+      Serializers.STRING.write(source.out(), filter);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_CONVERSATIONS_BY_TITLE_RESPONSE) {
-        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_CONVERSATIONS_BY_TITLE_RESPONSE) {
+        conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -274,17 +270,17 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Message> getMessages(Uuid conversation, Time start, Time end) {
-
+	  System.out.println("HERE 9");
     final Collection<Message> messages = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_MESSAGES_BY_TIME_REQUEST);
-      Time.SERIALIZER.write(connection.out(), start);
-      Time.SERIALIZER.write(connection.out(), end);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_MESSAGES_BY_TIME_REQUEST);
+      Time.SERIALIZER.write(source.out(), start);
+      Time.SERIALIZER.write(source.out(), end);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_MESSAGES_BY_TIME_RESPONSE) {
-        messages.addAll(Serializers.collection(Message.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGES_BY_TIME_RESPONSE) {
+        messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -299,17 +295,17 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<Message> getMessages(Uuid rootMessage, int range) {
-
+	  System.out.println("HERE 10");
     final Collection<Message> messages = new ArrayList<>();
 
-    try (final Connection connection = source.connect()) {
+    try {
 
-      Serializers.INTEGER.write(connection.out(), NetworkCode.GET_MESSAGES_BY_RANGE_REQUEST);
-      Uuid.SERIALIZER.write(connection.out(), rootMessage);
-      Serializers.INTEGER.write(connection.out(), range);
+      Serializers.INTEGER.write(source.out(), NetworkCode.GET_MESSAGES_BY_RANGE_REQUEST);
+      Uuid.SERIALIZER.write(source.out(), rootMessage);
+      Serializers.INTEGER.write(source.out(), range);
 
-      if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) {
-        messages.addAll(Serializers.collection(Message.SERIALIZER).read(connection.in()));
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) {
+        messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
       }
@@ -324,12 +320,11 @@ public final class View implements BasicView, LogicalView{
 
   public User checkUserLogin(String name, String password) {
 	  User validUser = null;
-
-	  System.out.println("Hiii------------------------2");
+	  System.out.println("HERE 11++++++++++++++++++++++++++++++++++++");
 	 try {
-		  Serializers.INTEGER.write(test.out(), NetworkCode.CHECK_USER_REQUEST);
-		  Serializers.STRING.write(test.out(), name);
-		  Serializers.STRING.write(test.out(), password);
+		  Serializers.INTEGER.write(source.out(), NetworkCode.CHECK_USER_REQUEST);
+		  Serializers.STRING.write(source.out(), name);
+		  Serializers.STRING.write(source.out(), password);
 
 		  return null;
 		  
@@ -350,13 +345,13 @@ public final class View implements BasicView, LogicalView{
 
   public int getMessageCount(Uuid userid) {
 	  int messageCount = 0;
+	  System.out.println("HERE 12");
+	  try {
+		  Serializers.INTEGER.write(source.out(), NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST);
+		  Uuid.SERIALIZER.write(source.out(), userid);
 
-	  try (final Connection connection = source.connect()) {
-		  Serializers.INTEGER.write(connection.out(), NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST);
-		  Uuid.SERIALIZER.write(connection.out(), userid);
-
-		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) {
-			  messageCount = Serializers.INTEGER.read(connection.in());
+		  if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) {
+			  messageCount = Serializers.INTEGER.read(source.in());
 		  }
 		  else {
 		      LOG.error("Response from server failed.");
@@ -372,13 +367,13 @@ public final class View implements BasicView, LogicalView{
   
   public Message getMessageById(Uuid messageid) {
 	  Message message = null;
-	  
-	  try (final Connection connection = source.connect()) {
-		  Serializers.INTEGER.write(connection.out(), NetworkCode.GET_MESSAGE_BY_ID_REQUEST);
-		  Uuid.SERIALIZER.write(connection.out(), messageid);
+	  System.out.println("HERE 13");
+	  try {
+		  Serializers.INTEGER.write(source.out(), NetworkCode.GET_MESSAGE_BY_ID_REQUEST);
+		  Uuid.SERIALIZER.write(source.out(), messageid);
 
-		  if (Serializers.INTEGER.read(connection.in()) == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
-			  message = Message.SERIALIZER.read(connection.in());
+		  if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
+			  message = Message.SERIALIZER.read(source.in());
 		  }
 		  else {
 		      LOG.error("Response from server failed.");

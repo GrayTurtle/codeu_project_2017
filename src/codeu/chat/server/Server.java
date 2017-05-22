@@ -94,33 +94,20 @@ public final class Server {
 	  BufferedReader in = new BufferedReader( new InputStreamReader(connection.in()));
 	  	while (true) {
 	  		if (in.ready()) {
-					    timeline.scheduleNow(new Runnable() {
-					      @Override
-					      public void run() {
-					        try {
-						          //LOG.info("Handling connection...");
+				LOG.info("Handling connection...");
 						
-						          final boolean success = onMessage(
-						              connection.in(),
-						              connection.out());
+				final boolean success = onMessage(connection.in(), connection.out());
 			
-						          LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
-					        } catch (Exception ex) {
-					          LOG.error(ex, "Exception while handling connection.");
-					        }
-					
-					        /*try {
-					          connection.close();
-					        } catch (Exception ex) {
-					          LOG.error(ex, "Exception while closing connection.");
-					        }*/
-					      }
-				});
+			    LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");			          
 	  		}
+	  		Thread.sleep(500);
 	  	}
 	  }
 	  catch (IOException ex) {
 		  LOG.error("Error in creating buffer", ex);
+	  }
+	  catch (InterruptedException ex) {
+		  LOG.error("Thread could not sleep", ex);
 	  }
   }
 

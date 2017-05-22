@@ -68,7 +68,8 @@ final class ServerMain {
                                        null;
 
     try (
-        final ConnectionSource serverSource = ServerConnectionSource.forPort(myPort);
+        //final ConnectionSource serverSource = ServerConnectionSource.forPort(myPort);
+    		final ConnectionSource serverSource = null;
         final ConnectionSource relaySource = relayAddress == null ? null : new ClientConnectionSource(relayAddress.host, relayAddress.port)
     ) {
 

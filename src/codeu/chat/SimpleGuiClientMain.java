@@ -22,6 +22,7 @@ import codeu.chat.client.View;
 import codeu.chat.util.Logger;
 import codeu.chat.util.RemoteAddress;
 import codeu.chat.util.connections.ClientConnectionSource;
+import codeu.chat.util.connections.Connection;
 import codeu.chat.util.connections.ConnectionSource;
 
 final class SimpleGuiClientMain {
@@ -47,8 +48,9 @@ final class SimpleGuiClientMain {
 		    try (
 		      final ConnectionSource source = new ClientConnectionSource(address.host, 2008)
 		    ) {
-		      final Controller controller = new Controller(source);
-		      final View view = new View(source);
+		      Connection client = source.connect();
+		      final Controller controller = new Controller(client);
+		      final View view = new View(client);
 		
 		      LOG.info("Creating client...");
 		      
