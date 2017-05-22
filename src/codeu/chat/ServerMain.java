@@ -16,6 +16,8 @@
 package codeu.chat;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import codeu.chat.common.Relay;
 import codeu.chat.common.Secret;
@@ -93,7 +95,7 @@ final class ServerMain {
 
     LOG.info("Created server.");
 
-    while (true) {
+    /*while (true) {
 
       try {
 
@@ -106,6 +108,36 @@ final class ServerMain {
       } catch (IOException ex) {
         LOG.error(ex, "Failed to establish connection.");
       }
-    }
+    }*/
+    
+    final ExecutorService clientProcessingPool = Executors.newFixedThreadPool(10);
+    Runnable acceptConnections = new Runnable() {
+    	
+    	@Override 
+    	public void run() {
+    		LOG.info("Established connection...");
+    		while (true) {
+    			try {
+    				final ConnectionSource serverSource1 = ServerConnectionSource.forPort(2007);
+    				final Connection connection = serverSource1.connect();
+    				Runnable handleClients = new Runnable() {
+    					@Override
+    					public void run() {
+    						server.handleConnection(connection);
+    					}	
+    				};
+    				clientProcessingPool.submit(handleClients);
+    			}
+    			catch (IOException ex) {
+    				 LOG.error(ex, "Failed to establish connection.");
+    			}
+    		}
+    	}
+    };
+    
+    Thread cycleServer = new Thread(acceptConnections);
+    cycleServer.start();
   }
+  
+
 }
