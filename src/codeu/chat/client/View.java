@@ -61,7 +61,10 @@ public final class View implements BasicView, LogicalView{
 			  in = new BufferedReader(new InputStreamReader(source.in()));
 			  while (true) {
 				  if (in.ready()) {
-					  System.out.println("Hiiiiiiiiii+++++++++++++++++++++++++++++++++++++++++");
+					  if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+						  User validUser = Serializers.nullable(User.SERIALIZER).read(test.in());
+						  System.out.println((validUser != null) ?  validUser.name : " valid user is null -------------------");
+					  }
 				  }
 			  }
 		  }
@@ -328,12 +331,14 @@ public final class View implements BasicView, LogicalView{
 		  Serializers.STRING.write(test.out(), name);
 		  Serializers.STRING.write(test.out(), password);
 
-		  if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+		  return null;
+		  
+		  /*if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
 			  validUser = Serializers.nullable(User.SERIALIZER).read(test.in());
 		  } else {
 		      LOG.error("Response from server failed.");
-		  }
-		  System.out.println("Hiii------------------------");
+		  }*/
+		  //System.out.println("Hiii------------------------");
 
 	  } catch (Exception ex) {
 		  System.out.println("ERROR: Exception during call on server. Check log for details.");
