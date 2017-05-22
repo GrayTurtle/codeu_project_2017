@@ -14,6 +14,8 @@
 
 package codeu.chat.server;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Comparator;
 
 import codeu.chat.DerbyStore;
@@ -96,6 +98,52 @@ public final class Model {
     userByTime.insert(user.creation, user);
     userByText.insert(user.name, user);
   }
+  
+  public User checkUserLogin(String name, String password) {
+	  User user = null;
+	  try {
+		  user = ds.userLogin(name, password);
+	  }
+	  catch (Exception ex) {
+			System.out.println("Logging in a user did not work.");
+			ex.printStackTrace(); 
+	  }
+	  
+	  return user;
+  }
+  
+  public boolean checkUsername(String name) {
+	  try {
+		  return ds.checkUsernameExists(name);
+	  }
+	  catch (Exception ex) {
+		 ex.printStackTrace(); 
+	  }
+	  
+  return false;
+  }
+  
+  public int getMessageCount(Uuid userid) {
+	  try {
+		  return ds.getMessageCount(userid);
+	  }
+	  catch (Exception ex) {
+		 ex.printStackTrace(); 
+	  }
+	 
+  return 0;
+  }
+  
+  public int setMessageCount(Uuid userid) {
+	  try {
+		  return ds.setUserMessageCount(userid);
+	  }
+	  catch (Exception ex) {
+		  
+	  }
+	  
+  return 0;
+  }
 
   public StoreAccessor<Uuid, User> userById() {
     return userById;
@@ -131,6 +179,10 @@ public final class Model {
   public StoreAccessor<Uuid, Conversation> conversationById() {
     return conversationById;
   }
+  
+  public Iterable<Conversation> getAllConversationsStored() {
+	  return ds.getAllConversations().all();
+  }
 
   public StoreAccessor<Time, Conversation> conversationByTime() {
     return conversationByTime;
@@ -158,6 +210,10 @@ public final class Model {
   public StoreAccessor<Uuid, Message> messageById() {
     return messageById;
   }
+  
+  public Message getMessageById(Uuid messageid) throws IOException, SQLException {
+	  return ds.getMessage(messageid);
+  }
 
   public StoreAccessor<Time, Message> messageByTime() {
     return messageByTime;
@@ -171,7 +227,7 @@ public final class Model {
 	  	// EDIT - Malik Graham
 	    // Update the conversations first and last message
 	    try {
-	    	ds.updateConversation(conversation);
+	    	ds.updateConversationMessages(conversation);
 	    }
 	    catch (Exception ex) {
 	    	ex.printStackTrace();
@@ -182,7 +238,7 @@ public final class Model {
 	  // EDIT - Malik Graham
 	  // Updating the next message for the last message
       try {
-    	  ds.updateLastMessage(message);
+    	  ds.updateNextMessage(message);
       }
       catch (Exception ex) {
       	ex.printStackTrace();

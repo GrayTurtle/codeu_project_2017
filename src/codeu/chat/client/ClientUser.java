@@ -18,7 +18,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.*;
+import java.util.regex.Pattern;
+
 
 import codeu.chat.common.User;
 import codeu.chat.util.Logger;
@@ -45,11 +46,18 @@ public final class ClientUser {
     this.view = view;
   }
 
+  /**
+   * Takes in a username or password entry and checks to make sure it's only made
+   * up of alphanumeric characters.
+   * @param userInput
+   * @return
+   */
+  public static boolean isValidInput(String userInput) {
 
-  // Makes sure the username/password combo doesn't contain any bad chars
-  static public boolean isValidUserInput(String username, String password) {
+    boolean validInput = Pattern.matches("[a-zA-Z0-9]+", userInput);
 
-    return isValidInput(username) && isValidInput(password);
+    return validInput;
+
   }
 
 
@@ -68,17 +76,25 @@ public final class ClientUser {
     return current;
   }
 
-  public boolean signInUser(String name) {
+  public boolean signInUser(String name, String password) {
     updateUsers();
 
-    final User prev = current;
-    if (name != null) {
-      final User newCurrent = usersByName.first(name);
-      if (newCurrent != null) {
-        current = newCurrent;
-      }
+    User validUser = view.checkUserLogin(name, password);
+
+    if (validUser != null) {
+	    final User prev = current;
+	    if (name != null) {
+	      final User newCurrent = usersByName.first(name);
+	      if (newCurrent != null) {
+	        current = newCurrent;
+	      }
+	    }
+	    return (prev != current);
     }
-    return (prev != current);
+
+
+    System.out.println("Login was UNSUCCESSFUL due to your username and password combination of: " + name + " " + password);
+    return false;
   }
 
   public boolean signOutUser() {
@@ -91,18 +107,27 @@ public final class ClientUser {
     printUser(current);
   }
 
-  public void addUser(String name, String password) {
-    final boolean validInputs = isValidInput(name) && isValidInput(password);
+  public boolean addUser(String name, String password) {
+	// TODO: check valid inputs for password OR hash it
+    boolean validInputs = isValidInput(name);
 
-    final User user = (validInputs) ? controller.newUser(name) : null;
+
+    final User user = (validInputs) ? controller.newUser(name, password) : null;
+
+
+    // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
+    current = user;
 
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");
+      return false;
     } else {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
       updateUsers();
     }
+
+    return true;
   }
 
   public void showAllUsers() {
@@ -133,7 +158,6 @@ public final class ClientUser {
   public void updateUsers() {
     usersById.clear();
     usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-
     for (final User user : view.getUsersExcluding(EMPTY)) {
       usersById.put(user.id, user);
       usersByName.insert(user.name, user);
@@ -152,5 +176,13 @@ public final class ClientUser {
   // Move to User's toString()
   public static void printUser(User user) {
     System.out.println(getUserInfoString(user));
+  }
+
+  public int getMessageCount(Uuid userid) {
+      return view.getMessageCount(userid);
+  }
+  
+  public int increaseMessageCount(Uuid userid) {
+	  return controller.updateMessageCount(userid);
   }
 }

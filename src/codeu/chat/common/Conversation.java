@@ -81,7 +81,7 @@ public final class Conversation {
     this.title = title;
     this.users = new HashSet<>();
 
-    this.summary = new ConversationSummary(id, owner, creation, title);
+    this.summary = new ConversationSummary(id, owner, creation, title, Uuid.NULL);
 
   }
   
@@ -96,6 +96,6 @@ public final class Conversation {
 	    this.firstMessage = firstMessage;
 	    this.lastMessage = lastMessage;
 
-	    this.summary = new ConversationSummary(id, owner, creation, title);
+	    this.summary = new ConversationSummary(id, owner, creation, title, lastMessage);
   }
 }

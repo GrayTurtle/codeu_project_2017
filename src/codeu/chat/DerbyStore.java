@@ -16,13 +16,22 @@ import codeu.chat.util.store.Store;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Uuid;
 
+import codeu.chat.common.DerbyDatabaseInteractions;
+import codeu.chat.DBColumns;
+
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 
-public class DerbyStore {
+/**
+ * 
+ * @author malikg
+ *
+ */
+public class DerbyStore implements DerbyDatabaseInteractions {
 	
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-	private String protocol = "jdbc:derby:test";
+	private String protocol = "jdbc:derby:../test";
 	
 	private Connection conn;
 	private Statement stmt;
@@ -30,25 +39,45 @@ public class DerbyStore {
 	private final String userTableName = "userInfo";
 	private final String conversationTableName = "conversation";
 	private final String messageTableName = "message";
-	private final String chatParticipantsTableName = "chatParticipants";
+	private final String chatParticipantsTableName = "chatParticipant";
+	private final String userMessageCountTableName = "userMessageCount";
+	
+	private final String getUserInfo = "SELECT * FROM " + userTableName +  " WHERE userid = ?";
+	private final String getConversationInfo = "SELECT * FROM " + conversationTableName +  " WHERE conversationid = ?";
+	private final String getUsersInvolved = "SELECT * FROM " + chatParticipantsTableName + " WHERE conversationid = ?" ;
 	
 	private final String checkUsername = "SELECT * FROM " + userTableName + " WHERE name = ?";
 	private final String checkValidUser = "SELECT * FROM " + userTableName + " WHERE name = ? AND password = ?";
 	
-	private final String addUserInfo = "INSERT INTO " + userTableName + " (id, name, password, creation) values (?, ?, ?, ?)";
-	private final String addConversationInfo = "INSERT INTO " + conversationTableName + " (id, owner, creation, title, firstMessage, lastMessage) " + 
+	private final String addUserInfo = "INSERT INTO " + userTableName + " (userid, name, password, creation) values (?, ?, ?, ?)";
+	private final String addConversationInfo = "INSERT INTO " + conversationTableName + " (conversationid, owner, creation, title, firstMessage, lastMessage) " + 
 			"values (?, ?, ?, ?, ?, ?)";
-	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (id, previous, creation, author, content, nextMessage) " + 
-	"values (?, ?, ?, ?, ?, ?)";
+	private final String addMessageInfo = "INSERT INTO " + messageTableName + " (messageid, previousMessage, creation, author, content, nextMessage) " + 
+			"values (?, ?, ?, ?, ?, ?)";
 	private final String addChatParticipantsInfo = "INSERT INTO " + chatParticipantsTableName + " (conversationid, userid) values (?, ?)";
+	private final String addUserMessageCount = "INSERT INTO " + userMessageCountTableName + " (userid, messageCount) values (?, ?)";
 
 	
-	private final String updateLastMessageById = "UPDATE " + messageTableName + " SET nextMessage = ? WHERE id = ?";
-	private final String updateConversationById = "UPDATE " + conversationTableName + " SET firstMessage = ?, lastMessage = ? WHERE id = ?";
+	private final String updateNextMessageById = "UPDATE " + messageTableName + " SET nextMessage = ? WHERE messageid = ?";
+	private final String updateConversationById = "UPDATE " + conversationTableName + " SET firstMessage = ?, lastMessage = ? WHERE conversationid = ?";
+	private final String updateMessageCountById = "UPDATE " + userMessageCountTableName + " SET messageCount = ? WHERE userid = ?";
+	
+	private final String getMessageById = "SELECT * FROM " + messageTableName + " WHERE messageid = ?";
+	private final String getMessageCountById = "SELECT messageCount FROM " + userMessageCountTableName + " WHERE userid = ?";
+	
 	
 	private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
 	
-	
+	/**
+	 * Checks to see if the tables exist
+	 * 		If they do not then we, create
+	 * 		them and log it.
+	 * 
+	 * 		If they do exist, then we skip 
+	 * 		the table creation process to 
+	 * 		avoid an exception.
+	 * 		
+	 */
 	public DerbyStore() {
 	
 		try {
@@ -56,7 +85,7 @@ public class DerbyStore {
 			Class.forName(driver).newInstance();
 			
 			// Checks to see if the database directory exist
-			File database = new File("testchatapp");
+			File database = new File("../testchatapp");
 					
 			// If it does exist then we connect to it, while
 			// not overwriting data.
@@ -74,18 +103,22 @@ public class DerbyStore {
 			stmt = conn.createStatement();
 			
 			// Create the chat user table
-			stmt.execute("CREATE TABLE " + userTableName + "(id varchar(255), name varchar(255), password varchar(255), creation BIGINT)");
+			stmt.execute("CREATE TABLE " + userTableName + " (userid varchar(255), name varchar(255), password varchar(255), creation BIGINT, PRIMARY KEY (userid))");
 			
 			// Create the conversations table
-			stmt.execute("CREATE TABLE " + conversationTableName + "(id varchar(255), "
-					+ "owner varchar(255), creation BIGINT, title varchar(255), users varchar(255), firstMessage varchar(255)," +
-			"lastMessage varchar(255))");
+			stmt.execute("CREATE TABLE " + conversationTableName + " (conversationid varchar(255), "
+					+ "owner varchar(255), creation BIGINT, title varchar(255), firstMessage varchar(255)," +
+			" lastMessage varchar(255), PRIMARY KEY (conversationid))");
 			
 			// Create the message table
-			stmt.execute("CREATE TABLE " + messageTableName + "(id varchar(255),"
-					 + "previous varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255))");
+			stmt.execute("CREATE TABLE " + messageTableName + " (messageid varchar(255),"
+					 + "previousMessage varchar(255), creation BIGINT, author varchar(255), content varchar(255), nextMessage varchar(255), PRIMARY KEY (messageid))");
 			
-			stmt.execute("CREATE TABLE " + chatParticipantsTableName + "(conversationid varchar(255), userid varchar(255))");
+			// Create the chatParticipantsTable
+			stmt.execute("CREATE TABLE " + chatParticipantsTableName + " (conversationid varchar(255), userid varchar(255))");
+			
+			// Create the messageCountTable 
+			stmt.execute("CREATE TABLE " + userMessageCountTableName + " (userid varchar(255), messageCount BIGINT, PRIMARY KEY (userid))");
 			
 			// Give confirmation of execution.
 			LOG.info("Tables do not exist. Table creation executed.");
@@ -95,33 +128,81 @@ public class DerbyStore {
 		}
 	}
 	
+	@Override
+	public User getUser(Uuid userid) throws SQLException, IOException {
+		PreparedStatement getUser = conn.prepareStatement(getUserInfo);
+		getUser.setString(1, removeCharsInUuid(userid.toString()));
+		ResultSet user = getUser.executeQuery();
+		
+		if (user.next()) {
+			return new User(Uuid.parse(user.getString(DBColumns.UserTable.userid)), user.getString(DBColumns.UserTable.name), user.getString(DBColumns.UserTable.password), Time.fromMs(user.getLong(DBColumns.UserTable.creation)));
+			
+		}
+		return null;
+	}
+	
+	@Override
+	public Conversation getConversation(Uuid conversationid) throws SQLException, IOException {
+		PreparedStatement getConversation = conn.prepareStatement(getConversationInfo);
+		getConversation.setString(1, removeCharsInUuid(conversationid.toString()));
+		ResultSet conversation = getConversation.executeQuery();
+		
+		PreparedStatement getUsersForConversation = conn.prepareStatement(getUsersInvolved);
+		getUsersForConversation.setString(1, removeCharsInUuid(conversationid.toString()));
+		ResultSet users = getUsersForConversation.executeQuery();
+		
+		HashSet<Uuid> usersInvolved = new HashSet<Uuid>();
+		
+		while (users.next()) {
+			//DBColumns.ChatParticipantsTable.userid
+			usersInvolved.add(Uuid.parse(users.getString(DBColumns.ChatParticipantTable.userid)));
+		}
+
+		if (conversation.next()) {
+			Uuid id = Uuid.parse(conversation.getString(DBColumns.ConversationTable.conversationid));
+			Uuid owner = Uuid.parse(conversation.getString(DBColumns.ConversationTable.owner));
+			Time creation = Time.fromMs(conversation.getLong(DBColumns.ConversationTable.creation));
+			String title = conversation.getString(DBColumns.ConversationTable.title);
+			Uuid firstMessage = Uuid.parse(conversation.getString(DBColumns.ConversationTable.firstMessage));
+			Uuid lastMessage = Uuid.parse(conversation.getString(DBColumns.ConversationTable.lastMessage));	
+			return new Conversation(id, owner, creation, title, usersInvolved, firstMessage, lastMessage);
+		}
+		
+	return null;
+	}
+	
+	
+	@Override
 	public boolean checkUsernameExists(String name) throws SQLException {
 		PreparedStatement checkUserTest = conn.prepareStatement(checkUsername);
 		checkUserTest.setString(1, name);
 		ResultSet user = checkUserTest.executeQuery();
 		
-		return user == null;
+		return user.next();
 	}
 	
-	public String userLoginCheck(String name, String password) throws SQLException {
+	@Override
+	public User userLogin(String name, String password) throws SQLException, IOException {
 		PreparedStatement checkValidUserTest = conn.prepareStatement(checkValidUser);
 		checkValidUserTest.setString(1, name);
 		checkValidUserTest.setString(2, password);
-		ResultSet user = checkValidUserTest.executeQuery();
+		ResultSet user = checkValidUserTest.executeQuery();	
 		
-		return (user != null) ? user.getString(1) : null;
+		return (user.next()) ? new User(Uuid.parse(user.getString(DBColumns.UserTable.userid)), user.getString(DBColumns.UserTable.name), user.getString(DBColumns.UserTable.password), Time.fromMs(user.getLong(DBColumns.UserTable.creation))) : null;
 	}
 	
+	@Override
 	public void addUser(User u) throws SQLException {
 		PreparedStatement addUser = conn.prepareStatement(addUserInfo);
 		addUser.setString(1, removeCharsInUuid(u.id.toString()));
 		addUser.setString(2, u.name);
-		addUser.setString(3, "test");
+		addUser.setString(3, u.password);
 		addUser.setLong(4, u.creation.inMs());
-		
+	
 		addUser.executeUpdate();
 	}
 	
+	@Override
 	public void addMessage(Message m) throws SQLException {
 		PreparedStatement addMessage = conn.prepareStatement(addMessageInfo);
 		addMessage.setString(1, removeCharsInUuid(m.id.toString()));
@@ -134,9 +215,9 @@ public class DerbyStore {
 		addMessage.executeUpdate();
 	}
 	
-	
+	@Override
 	public void addConversation(Conversation c) throws SQLException {
-		
+	
 		for (Uuid s : c.users) {
 			// Adding chat participants for a specific conversation to a table specifically for it.
 			PreparedStatement addChatParticipants = conn.prepareStatement(addChatParticipantsInfo);
@@ -155,10 +236,10 @@ public class DerbyStore {
 		addConversation.setString(5, removeCharsInUuid(c.firstMessage.toString()));
 		addConversation.setString(6, removeCharsInUuid(c.lastMessage.toString()));
 		addConversation.executeUpdate();
-		
 	}
 	
-	public void updateConversation(Conversation c) throws SQLException {
+	@Override
+	public void updateConversationMessages(Conversation c) throws SQLException {
 		
 		PreparedStatement updateConversationStatement = conn.prepareStatement(updateConversationById);
 		
@@ -167,11 +248,11 @@ public class DerbyStore {
 		updateConversationStatement.setString(3, removeCharsInUuid(c.id.toString()));
 		
 		updateConversationStatement.executeUpdate();
-		
 	}
 	
-	public void updateLastMessage(Message m) throws SQLException {
-		PreparedStatement updateMessageStatement = conn.prepareStatement(updateLastMessageById);
+	@Override
+	public void updateNextMessage(Message m) throws SQLException {
+		PreparedStatement updateMessageStatement = conn.prepareStatement(updateNextMessageById);
 		
 		updateMessageStatement.setString(1, removeCharsInUuid(m.next.toString()));
 		updateMessageStatement.setString(2, removeCharsInUuid(m.id.toString()));
@@ -179,6 +260,22 @@ public class DerbyStore {
 		updateMessageStatement.executeUpdate();
 	}
 	
+	@Override
+	public Message getMessage(Uuid messageid) throws SQLException, IOException {
+		PreparedStatement getMessageStatement = conn.prepareStatement(getMessageById); 
+		
+		getMessageStatement.setString(1, removeCharsInUuid(messageid.toString()));
+		
+		ResultSet message = getMessageStatement.executeQuery();
+		
+		if (message.next()) {
+			return new Message(Uuid.parse(message.getString(DBColumns.MessagesTable.messageid)), Uuid.parse(message.getString(DBColumns.MessagesTable.nextMessage)), Uuid.parse(message.getString(DBColumns.MessagesTable.previousMessage)), 
+					Time.fromMs(message.getLong(DBColumns.MessagesTable.creation)), Uuid.parse(message.getString(DBColumns.MessagesTable.author)), message.getString(DBColumns.MessagesTable.content));
+		}
+		return null;
+	}
+	
+	@Override
 	public Store<Uuid, User> getAllUsers() {
 		Store<Uuid, User> allUsers = new Store<>(UUID_COMPARE);
 		try {
@@ -188,9 +285,11 @@ public class DerbyStore {
 			
 			while (allUsersResponse.next()) {
 				
-				String uuid = allUsersResponse.getString(1);
-				String name = allUsersResponse.getString(2);
-				Long creation = allUsersResponse.getLong(4);
+				
+				String uuid = allUsersResponse.getString(DBColumns.UserTable.userid);
+				String name = allUsersResponse.getString(DBColumns.UserTable.name);
+				String password = allUsersResponse.getString(DBColumns.UserTable.password);
+				Long creation = allUsersResponse.getLong(DBColumns.UserTable.creation);
 				
 				// Creation of uuid object from database
 				Uuid userid = Uuid.parse(uuid);
@@ -198,7 +297,7 @@ public class DerbyStore {
 				// Creation of time object from database
 				Time time = Time.fromMs(creation);
 				
-				User user = new User(userid, name, time);
+				User user = new User(userid, name, password, time);
 				
 				// Add each created user to the store object
 				allUsers.insert(userid, user);
@@ -212,6 +311,7 @@ public class DerbyStore {
 		return allUsers;
 	}
 	
+	@Override
 	public Store<Uuid, Conversation> getAllConversations() {
 		Store<Uuid, Conversation> allConversations = new Store<>(UUID_COMPARE);
 		
@@ -224,23 +324,22 @@ public class DerbyStore {
 			
 			while (allConversationsResponse.next()) {
 				
-				Uuid conversationid = Uuid.fromString(removeCharsInUuid(allConversationsResponse.getString(1)));
+				Uuid conversationid = Uuid.parse(removeCharsInUuid(allConversationsResponse.getString("conversationid")));
 				
 				// Retrieve the users that are a part of the conversation
 				ResultSet chatParticipants = partipantsStatement.executeQuery("SELECT userid FROM " + chatParticipantsTableName + " WHERE conversationid = '" + allConversationsResponse.getString(1) + "'");
 				
 				// Iterate over the participants and them to the hashset
 				while (chatParticipants.next()) {
-					ownersUuid.add(Uuid.fromString(chatParticipants.getString(1)));
+					ownersUuid.add(Uuid.parse(chatParticipants.getString(DBColumns.ChatParticipantTable.userid)));
 				}
 				
-				Uuid ownerUuid = Uuid.fromString(allConversationsResponse.getString(2));
-				Time creation = new Time(allConversationsResponse.getLong(3));
+				Uuid ownerUuid = Uuid.parse(allConversationsResponse.getString(DBColumns.ConversationTable.owner));
+				Time creation = Time.fromMs(allConversationsResponse.getLong(DBColumns.ConversationTable.creation));
 
-				String title = allConversationsResponse.getString(4);
-				String owners = allConversationsResponse.getString(5);
-				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString(6));
-				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString(7));
+				String title = allConversationsResponse.getString(DBColumns.ConversationTable.title);
+				Uuid firstMessage = Uuid.parse(allConversationsResponse.getString(DBColumns.ConversationTable.firstMessage));
+				Uuid lastMessage = Uuid.parse(allConversationsResponse.getString(DBColumns.ConversationTable.lastMessage));
 				
 				Conversation c = new Conversation(conversationid, ownerUuid, creation, title, ownersUuid, firstMessage, lastMessage);
 				allConversations.insert(conversationid, c);
@@ -255,6 +354,7 @@ public class DerbyStore {
 		return allConversations;
 	}
 	
+	@Override
 	public Store<Uuid, Message> getAllMessages() {
 		Store<Uuid, Message> allMessages = new Store<>(UUID_COMPARE);
 		
@@ -263,12 +363,12 @@ public class DerbyStore {
 
 			while (allMessagesResponse.next()) {
 				
-				Uuid messageid = Uuid.parse(allMessagesResponse.getString(1));
-				Uuid previous = Uuid.parse(allMessagesResponse.getString(2));
-				Time creation = Time.fromMs(allMessagesResponse.getLong(3));
-				Uuid author = Uuid.parse(allMessagesResponse.getString(4));
-				String content = allMessagesResponse.getString(5);
-				Uuid next = Uuid.parse(allMessagesResponse.getString(6));
+				Uuid messageid = Uuid.parse(allMessagesResponse.getString(DBColumns.MessagesTable.messageid));
+				Uuid previous = Uuid.parse(allMessagesResponse.getString(DBColumns.MessagesTable.previousMessage));
+				Time creation = Time.fromMs(allMessagesResponse.getLong(DBColumns.MessagesTable.creation));
+				Uuid author = Uuid.parse(allMessagesResponse.getString(DBColumns.MessagesTable.author));
+				String content = allMessagesResponse.getString(DBColumns.MessagesTable.content);
+				Uuid next = Uuid.parse(allMessagesResponse.getString(DBColumns.MessagesTable.nextMessage));
 				
 				Message m = new Message(messageid, next, previous, creation, author, content);
 				allMessages.insert(messageid, m);
@@ -283,34 +383,55 @@ public class DerbyStore {
 		return allMessages;
 	}
 	
+	@Override
+	public int getMessageCount(Uuid userid) throws SQLException {
+		PreparedStatement getMessageCount = conn.prepareStatement(getMessageCountById);
+		getMessageCount.setString(1, removeCharsInUuid(userid.toString()));
+		
+		ResultSet messageCount = getMessageCount.executeQuery();
+		
+		if (messageCount.next()) {
+			return messageCount.getInt(DBColumns.UserMessageCountTable.messageCount);
+		}
+		
+	return 0;
+	}
+
+	@Override
+	public int setUserMessageCount(Uuid userid) throws SQLException {
+		String uuid = removeCharsInUuid(userid.toString());
+		int messageCount = getMessageCount(userid);
+		
+		if (messageCount != 0) {
+			PreparedStatement updateMessageCount = conn.prepareStatement(updateMessageCountById);
+			updateMessageCount.setInt(1, messageCount + 1);
+			updateMessageCount.setString(2, uuid);
+			updateMessageCount.executeUpdate();
+			return messageCount + 1;
+		}
+		else {
+			addUserMessageCount(uuid);
+			return 1;
+		}
+	}
+	
+	@Override
+	public void addUserMessageCount(String uuid) throws SQLException {	
+		PreparedStatement setMessageCount = conn.prepareStatement(addUserMessageCount);
+		setMessageCount.setString(1, uuid);
+		setMessageCount.setInt(2, 1);
+		setMessageCount.execute();	
+	}
+
+	
 	// When Uuid is converted to a string
 	// it adds characters such as opening
-	// and closing brackets. This function removes
-	// them, and decreases the different numbers in 
-	// the uuid since it could be larger than an int.
+	// and closing brackets.
 	public String removeCharsInUuid(String uuid) {
 		// Remove the characters when uuid is transformed to a string
 		uuid = uuid.replace("[", "");
 		uuid = uuid.replace("]", "");
 		uuid = uuid.replace("UUID:", "");
-		
-		// Prevent a number larger than the max possible int
-		// from being passed into the database.
-		String[] nums = uuid.split("\\.");
-		String largestInt = String.valueOf(Integer.MAX_VALUE);
-		StringBuilder collectedUuid = new StringBuilder();
-		StringBuilder current = new StringBuilder();
-		if (nums.length > 2) {
-			for (int x = 0; x < nums[2].length(); x++) {
-				current = collectedUuid;
-				current.append(nums[2].charAt(x));
-					if (largestInt.length() - 1 > current.length()) {
-						current = collectedUuid;
-					} else break;
-			}
-			
-			uuid = nums[0] + "." + nums[1] + "." + collectedUuid.toString();
-		}
 		
 		return uuid;
 	}

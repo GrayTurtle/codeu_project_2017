@@ -15,11 +15,15 @@
 package codeu.chat.client;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
+import codeu.chat.common.Message;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Method;
 import codeu.chat.util.Uuid;
@@ -44,6 +48,41 @@ public final class ClientConversation {
   // This is the set of conversations known to the server, sorted by title.
   private Store<String, ConversationSummary> summariesSortedByTitle =
       new Store<>(String.CASE_INSENSITIVE_ORDER);
+  
+  
+  private Map<ConversationSummary, String> summariesSortedByCreationTime =
+	 new  TreeMap<ConversationSummary, String>(new sortByCreation());
+  
+  /**
+   * Implements Comparator that orders ConversationSummaries
+   * by the last message creation time of the conversation their  
+   * mapped to (newest to oldest) when inserted into the TreeMap
+   * summariesSortedByCreationTime.
+   * @author malikg
+   *
+   */
+  class sortByCreation implements Comparator<ConversationSummary> {
+	  @Override
+	  public int compare(ConversationSummary a, ConversationSummary b) {
+		  
+		  if (!Uuid.equals(a.lastMessage, Uuid.NULL) && !Uuid.equals(b.lastMessage, Uuid.NULL)) {
+			  Message messageA = view.getMessageById(a.lastMessage);
+			  Message messageB = view.getMessageById(b.lastMessage);
+			  if (messageA.creation.inMs() > messageB.creation.inMs()) return -1;
+			  else if (messageA.creation.inMs() < messageB.creation.inMs()) return 1;
+			  
+		  return 0;
+		  }
+		  else if (!Uuid.equals(a.lastMessage, Uuid.NULL)) return -1;
+		  else if (!Uuid.equals(b.lastMessage, Uuid.NULL)) return 1;
+		  
+		  /*if (a.creation.inMs() > b.creation.inMs()) return -1;
+		  else if (a.creation.inMs() < b.creation.inMs()) return 1;
+		  
+	  return 0;*/
+	  return 0;
+	  }
+  }
 
   public ClientConversation(Controller controller, View view, ClientUser userContext) {
     this.controller = controller;
@@ -164,13 +203,22 @@ public final class ClientConversation {
   }
 
   public int conversationsCount() {
-   System.out.println(this.getClass().toString() + " conversationsCount()");
+	  System.out.println(this.getClass().toString() + " conversationsCount()");
    return summariesByUuid.size();
   }
 
   public Iterable<ConversationSummary> getConversationSummaries() {
 	  System.out.println(this.getClass().toString() + " getConversationSummaries()");
     return summariesSortedByTitle.all();
+  }
+  
+  public Store<String, ConversationSummary> getConversationSummariesStore() {
+	  System.out.println(this.getClass().toString() + " getConversationSummaries()");
+    return summariesSortedByTitle;
+  }
+  
+  public Map<ConversationSummary, String> getSummariesByCreationTime() {
+	  return summariesSortedByCreationTime;
   }
 
   // Update the list of known Conversations.
@@ -180,10 +228,13 @@ public final class ClientConversation {
 	  System.out.println(this.getClass().toString() + " updateAllConversations()");
     summariesByUuid.clear();
     summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
+    
+    summariesSortedByCreationTime = new TreeMap<ConversationSummary, String>(new sortByCreation());
 
     for (final ConversationSummary cs : view.getAllConversations()) {
       summariesByUuid.put(cs.id, cs);
       summariesSortedByTitle.insert(cs.title, cs);
+      summariesSortedByCreationTime.put(cs, cs.title);
     }
 
     if (currentChanged) {

@@ -23,6 +23,7 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.Collection;
 
+import codeu.chat.DerbyStore;
 import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
 import codeu.chat.common.LinearUuidGenerator;
@@ -137,8 +138,11 @@ public final class Server {
     } else if (type == NetworkCode.NEW_USER_REQUEST) {
 
       final String name = Serializers.STRING.read(in);
+      
+      // ADDED by Malik
+      final String password = Serializers.STRING.read(in);
 
-      final User user = controller.newUser(name);
+      final User user = controller.newUser(name, password);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_USER_RESPONSE);
       Serializers.nullable(User.SERIALIZER).write(out, user);
@@ -241,8 +245,67 @@ public final class Server {
       Serializers.INTEGER.write(out, NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE);
       Serializers.collection(Message.SERIALIZER).write(out, messages);
 
-    } else {
+    } else if (type == NetworkCode.CHECK_USER_REQUEST) {
+    	
+    	final String username = Serializers.STRING.read(in);
+    	final String password = Serializers.STRING.read(in);
+    	
+    	User validUser = null;
+    	try {
+    		validUser = model.checkUserLogin(username, password);
+    	}
+    	catch (Exception ex) {
+    		ex.printStackTrace();
+    	}
+    	
+    	Serializers.INTEGER.write(out, NetworkCode.CHECK_USER_RESPONSE);
+    	Serializers.nullable(User.SERIALIZER).write(out, validUser);
 
+  	} else if (type == NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST) {
+  		final Uuid userid = Uuid.SERIALIZER.read(in);
+  		
+  		int messageCount = 0;
+  		try {
+  			messageCount = model.getMessageCount(userid);
+  		}
+  		catch (Exception ex) {
+  			ex.printStackTrace();
+  		}
+  		
+  		Serializers.INTEGER.write(out, NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE);
+  		Serializers.INTEGER.write(out, messageCount);
+  		
+  	} 
+  	else if (type == NetworkCode.UPDATE_MESSAGE_COUNT_REQUEST) {
+  		final Uuid userid = Uuid.SERIALIZER.read(in);
+  		
+  		int messageCount = 0;
+  		try {
+  			model.setMessageCount(userid);
+  		}
+  		catch (Exception ex) {
+  			ex.printStackTrace();
+  		}
+  		
+  		Serializers.INTEGER.write(out, NetworkCode.UPDATE_MESSAGE_COUNT_RESPONSE);
+  		Serializers.INTEGER.write(out, messageCount);
+  		
+  	}
+  	else if (type == NetworkCode.GET_MESSAGE_BY_ID_REQUEST) {
+  		final Uuid messageid = Uuid.SERIALIZER.read(in);
+  		Message message = null;
+  		
+  		try {
+  			message = model.getMessageById(messageid);
+  		}
+  		catch (Exception ex) {
+  			ex.printStackTrace();
+  		}
+  		
+  		Serializers.INTEGER.write(out, NetworkCode.GET_MESSAGE_BY_ID_RESPONSE);
+  		Message.SERIALIZER.write(out, message);
+  		
+  	} else {
       // In the case that the message was not handled make a dummy message with
       // the type "NO_MESSAGE" so that the client still gets something.
 
@@ -261,8 +324,9 @@ public final class Server {
 
     User user = model.userById().first(relayUser.id());
 
+    // TODO: THIS NEEDS TO BE LOOKED AT --- ADDING relayUser.text() for password will probably not work
     if (user == null) {
-      user = controller.newUser(relayUser.id(), relayUser.text(), relayUser.time());
+      user = controller.newUser(relayUser.id(), relayUser.text(), relayUser.text(), relayUser.time());
     }
 
     Conversation conversation = model.conversationById().first(relayConversation.id());
