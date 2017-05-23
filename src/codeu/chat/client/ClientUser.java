@@ -57,13 +57,17 @@ public final class ClientUser {
 
     return validInput;
   }
-
+  
   public boolean hasCurrent() {
     return (current != null);
   }
 
   public User getCurrent() {
     return current;
+  }
+  
+  public void setCurrent(User user) {
+	  this.current = user;
   }
 
   public boolean signInUser(String name, String password) {
@@ -79,6 +83,7 @@ public final class ClientUser {
 	        current = newCurrent;
 	      }
 	    }
+	    System.out.println((prev != current) ? "trueeeeeee" : "falseeeeeee");
 	    return (prev != current);
     }
 

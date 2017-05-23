@@ -57,6 +57,12 @@ public final class Server {
 
   private final Relay relay;
   private Uuid lastSeen = Uuid.NULL;
+  
+  
+  // Post-processing Variables for Client and Server
+  private User newUser;
+  private Conversation newConversation;
+  private Message newMessage;
 
   public Server(final Uuid id, final byte[] secret, final Relay relay) {
 
@@ -92,13 +98,48 @@ public final class Server {
   public void handleConnection(final Connection connection) {
 	  try {
 	  BufferedReader in = new BufferedReader( new InputStreamReader(connection.in()));
+	  User prevUser = null;
+	  Conversation prevConversation = null;
+	  Message prevMessage = null;
 	  	while (true) {
 	  		if (in.ready()) {
 				LOG.info("Handling connection...");
+				
+				timeline.scheduleNow(new Runnable() {
 						
-				final boolean success = onMessage(connection.in(), connection.out());
-			
-			    LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");			          
+					@Override
+					public void run() {
+						try {
+						final boolean success = onMessage(connection.in(), connection.out());
+						LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
+						}
+						catch (IOException ex) {
+							LOG.error("Error in tranfering data", ex);
+						}
+					}
+				
+				});   			          
+	  		}
+	  		else {
+	  			//LOG.info("Not handling connection...");
+	  			   if (newUser != null && !newUser.equals(prevUser)) {
+	  				   Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_USER_RESPONSE);
+	  				   Serializers.nullable(User.SERIALIZER).write(connection.out(), newUser);
+	  				   newUser = null;
+	  			   }
+	  			   if (newConversation != null && !newConversation.equals(prevConversation)) {
+	  				   Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_CONVERSATION_RESPONSE);
+	  				   Serializers.nullable(Conversation.SERIALIZER).write(connection.out(), newConversation);
+	  				   newConversation = null;
+	  			   }
+	  			   if (newMessage != null && !newMessage.equals(prevMessage)) {
+	  				  Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_MESSAGE_RESPONSE);
+	  				  Serializers.nullable(Message.SERIALIZER).write(connection.out(), newMessage); 
+	  				  newMessage = null;
+	  			   }
+	  			   prevUser = newUser;
+	  			   prevConversation = newConversation;
+	  			   prevMessage = newMessage;
 	  		}
 	  		Thread.sleep(500);
 	  	}
@@ -121,15 +162,15 @@ public final class Server {
       final Uuid conversation = Uuid.SERIALIZER.read(in);
       final String content = Serializers.STRING.read(in);
 
-      final Message message = controller.newMessage(author, conversation, content);
+      newMessage = controller.newMessage(author, conversation, content);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_MESSAGE_RESPONSE);
-      Serializers.nullable(Message.SERIALIZER).write(out, message);
+      Serializers.nullable(Message.SERIALIZER).write(out, newMessage);
 
       timeline.scheduleNow(createSendToRelayEvent(
           author,
           conversation,
-          message.id));
+          newMessage.id));
 
     } else if (type == NetworkCode.NEW_USER_REQUEST) {
 
@@ -138,20 +179,20 @@ public final class Server {
       // ADDED by Malik
       final String password = Serializers.STRING.read(in);
 
-      final User user = controller.newUser(name, password);
+      newUser = controller.newUser(name, password);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_USER_RESPONSE);
-      Serializers.nullable(User.SERIALIZER).write(out, user);
+      Serializers.nullable(User.SERIALIZER).write(out, newUser);
 
     } else if (type == NetworkCode.NEW_CONVERSATION_REQUEST) {
 
       final String title = Serializers.STRING.read(in);
       final Uuid owner = Uuid.SERIALIZER.read(in);
 
-      final Conversation conversation = controller.newConversation(title, owner);
+      newConversation = controller.newConversation(title, owner);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_CONVERSATION_RESPONSE);
-      Serializers.nullable(Conversation.SERIALIZER).write(out, conversation);
+      Serializers.nullable(Conversation.SERIALIZER).write(out, newConversation);
 
     } else if (type == NetworkCode.GET_USERS_BY_ID_REQUEST) {
 

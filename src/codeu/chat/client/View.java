@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 
 import codeu.chat.common.BasicView;
 import codeu.chat.common.Conversation;
@@ -45,45 +46,55 @@ public final class View implements BasicView, LogicalView{
 
   private final Connection source;
   
-  private Connection test;
+  private ClientConnection client;
   
-  class ClientConnection implements Runnable {
-	  Connection source2;
-	  BufferedReader in;
-	  
+  // Post-processing Variables for Client and Server
+  private User signedInUser = null;
+  // Pauses the main thread to allow ClientConnection 
+  // to parse the newly received data.
+  CountDownLatch latch = new CountDownLatch(1);
+
+  
+  class ClientConnection extends Thread {
+	  private Connection source2;
+	  private BufferedReader in;
+
 	  public ClientConnection(Connection source) {
 		  this.source2 = source;
 	  }
 
 	  @Override()
 	  public void run() {
-		  try {
-			  in = new BufferedReader(new InputStreamReader(source.in()));
-			  while (true) {
-				  if (in.ready()) {
-					  if (Serializers.INTEGER.read(source.in()) == NetworkCode.CHECK_USER_RESPONSE) {
-						  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
-						  System.out.println((validUser != null) ?  validUser.name : " valid user is null -------------------");
-					  }
-				  }
-				  Thread.sleep(500);
+			  try {
+				  in = new BufferedReader(new InputStreamReader(source.in()));
+				  while (true) {
+					  if (in.ready()) {
+							  if (Serializers.INTEGER.read(source.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+								  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
+								  System.out.println((validUser != null) ?  validUser.name + " was received from the server" : " valid user is null");
+								  signedInUser = validUser;
+								  latch.countDown();
+							  }
+					  } 
+					  Thread.sleep(500);
+				  } 
 			  }
-		  }
-		  catch (IOException ex) {
-			  LOG.error("Buffered Reader did not work", ex);
-		  }
-		  catch (InterruptedException ex) {
-			  LOG.error("Thread could not sleep", ex);
-		  }
+			  catch (IOException ex) {
+				  LOG.error("Buffered Reader did not work", ex);
+			  }
+			  catch (InterruptedException ex) {
+				  LOG.error("Thread could not sleep", ex);
+		  }	
 	  }
+
   }
 
   public View(Connection source) {
     this.source = source;
-    Thread client = new Thread(new ClientConnection(source));
+    this.client = new ClientConnection(source);
     client.start();
   }
-
+  
   @Override
   public Collection<User> getUsers(Collection<Uuid> ids) {
 	 System.out.println("HERE 1");
@@ -319,28 +330,22 @@ public final class View implements BasicView, LogicalView{
   }
 
   public User checkUserLogin(String name, String password) {
-	  User validUser = null;
-	  System.out.println("HERE 11++++++++++++++++++++++++++++++++++++");
 	 try {
 		  Serializers.INTEGER.write(source.out(), NetworkCode.CHECK_USER_REQUEST);
 		  Serializers.STRING.write(source.out(), name);
 		  Serializers.STRING.write(source.out(), password);
-
-		  return null;
 		  
-		  /*if (Serializers.INTEGER.read(test.in()) == NetworkCode.CHECK_USER_RESPONSE) {
-			  validUser = Serializers.nullable(User.SERIALIZER).read(test.in());
-		  } else {
-		      LOG.error("Response from server failed.");
-		  }*/
-		  //System.out.println("Hiii------------------------");
-
+		  // Pause this thread to allow the ClientConnection
+		  // Thread to run and relase the latch.
+		  latch.await();
+		  
 	  } catch (Exception ex) {
 		  System.out.println("ERROR: Exception during call on server. Check log for details.");
 	      LOG.error(ex, "Exception during call on server.");
 	  }
-
-	  return validUser;
+	 
+	  System.out.println(signedInUser.name + " has been received");
+	  return signedInUser;
   }
 
   public int getMessageCount(Uuid userid) {
