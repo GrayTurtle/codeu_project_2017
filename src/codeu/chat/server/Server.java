@@ -141,7 +141,7 @@ public final class Server {
 	  			   prevConversation = newConversation;
 	  			   prevMessage = newMessage;
 	  		}
-	  		Thread.sleep(500);
+	  		Thread.sleep(10);
 	  	}
 	  }
 	  catch (IOException ex) {

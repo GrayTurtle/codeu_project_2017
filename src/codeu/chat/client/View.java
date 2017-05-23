@@ -48,11 +48,19 @@ public final class View implements BasicView, LogicalView{
   
   private ClientConnection client;
   
-  // Post-processing Variables for Client and Server
-  private User signedInUser = null;
   // Pauses the main thread to allow ClientConnection 
   // to parse the newly received data.
-  CountDownLatch latch = new CountDownLatch(1);
+  private CountDownLatch latch = new CountDownLatch(1);
+  
+  // Post-processing Variables for Client and Server
+  private User signedInUser = null;
+  // getUsersExcluding()
+  Collection<User> users = new ArrayList<>();
+  // getAllConversations()
+  Collection<ConversationSummary> summaries;
+  // getMessages()
+  Collection<Message> messages;
+  
 
   
   class ClientConnection extends Thread {
@@ -69,14 +77,35 @@ public final class View implements BasicView, LogicalView{
 				  in = new BufferedReader(new InputStreamReader(source.in()));
 				  while (true) {
 					  if (in.ready()) {
-							  if (Serializers.INTEGER.read(source.in()) == NetworkCode.CHECK_USER_RESPONSE) {
+						      int type = Serializers.INTEGER.read(source.in());
+						      if (type == NetworkCode.NEW_USER_RESPONSE) {} 
+							  if (type == NetworkCode.CHECK_USER_RESPONSE) {
 								  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
-								  System.out.println((validUser != null) ?  validUser.name + " was received from the server" : " valid user is null");
+								  System.out.println((validUser != null) ?  validUser.name + " was received from the server..." : " valid user is null...");
 								  signedInUser = validUser;
 								  latch.countDown();
+								  latch = new CountDownLatch(1);
+							  }
+							  else if (type == NetworkCode.GET_USERS_EXCLUDING_RESPONSE) {
+								  System.out.println("Got Users Excluding....");
+								  users.addAll(Serializers.collection(User.SERIALIZER).read(source.in()));
+								  latch.countDown();
+								  latch = new CountDownLatch(1);
+							  }
+							  else if (type == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) { 
+								  System.out.println("Got All Conversations...");
+								  summaries.addAll(Serializers.collection(ConversationSummary.SERIALIZER).read(source.in()));
+								  latch.countDown();
+								  latch = new CountDownLatch(1);
+							  }
+							  else if (type == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) { 
+								  System.out.println("Getting Messages...");
+								  messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
+								  latch.countDown();
+								  latch = new CountDownLatch(1);
 							  }
 					  } 
-					  Thread.sleep(500);
+					  Thread.sleep(10);
 				  } 
 			  }
 			  catch (IOException ex) {
@@ -84,7 +113,7 @@ public final class View implements BasicView, LogicalView{
 			  }
 			  catch (InterruptedException ex) {
 				  LOG.error("Thread could not sleep", ex);
-		  }	
+			  }
 	  }
 
   }
@@ -122,17 +151,18 @@ public final class View implements BasicView, LogicalView{
   @Override
   public Collection<ConversationSummary> getAllConversations() {
 	  System.out.println("HERE 2");
-    final Collection<ConversationSummary> summaries = new ArrayList<>();
+	  summaries = new ArrayList<>();
 
     try {
-
       Serializers.INTEGER.write(source.out(), NetworkCode.GET_ALL_CONVERSATIONS_REQUEST);
+      
+      latch.await();
 
-      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) {
+      /*if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) {
         summaries.addAll(Serializers.collection(ConversationSummary.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
-      }
+      }*/
 
     } catch (Exception ex) {
       System.out.println("ERROR: Exception during call on server. Check log for details.");
@@ -211,19 +241,16 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<User> getUsersExcluding(Collection<Uuid> ids) {
-	  System.out.println("HERE 6");
-    final Collection<User> users = new ArrayList<>();
+	System.out.println("HERE 6");
+    users = new ArrayList<>();
 
     try {
-
       Serializers.INTEGER.write(source.out(), NetworkCode.GET_USERS_EXCLUDING_REQUEST);
       Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
-
-      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USERS_EXCLUDING_RESPONSE) {
-        users.addAll(Serializers.collection(User.SERIALIZER).read(source.in()));
-      } else {
-        LOG.error("Response from server failed.");
-      }
+      
+      System.out.println("WAITING TO GET USER EXCLUDING");
+      latch.await();
+      
     } catch (Exception ex) {
       System.out.println("ERROR: Exception during call on server. Check log for details.");
       LOG.error(ex, "Exception during call on server.");
@@ -307,7 +334,7 @@ public final class View implements BasicView, LogicalView{
   @Override
   public Collection<Message> getMessages(Uuid rootMessage, int range) {
 	  System.out.println("HERE 10");
-    final Collection<Message> messages = new ArrayList<>();
+      messages = new ArrayList<>();
 
     try {
 
@@ -315,11 +342,13 @@ public final class View implements BasicView, LogicalView{
       Uuid.SERIALIZER.write(source.out(), rootMessage);
       Serializers.INTEGER.write(source.out(), range);
 
-      if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) {
+      /*if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) {
         messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
       } else {
         LOG.error("Response from server failed.");
-      }
+      }*/
+      
+      latch.await();
 
     } catch (Exception ex) {
       System.out.println("ERROR: Exception during call on server. Check log for details.");
@@ -336,7 +365,8 @@ public final class View implements BasicView, LogicalView{
 		  Serializers.STRING.write(source.out(), password);
 		  
 		  // Pause this thread to allow the ClientConnection
-		  // Thread to run and relase the latch.
+		  // Thread to run and release the latch.
+		  System.out.println("WAITING TO GET USER");
 		  latch.await();
 		  
 	  } catch (Exception ex) {
@@ -344,7 +374,7 @@ public final class View implements BasicView, LogicalView{
 	      LOG.error(ex, "Exception during call on server.");
 	  }
 	 
-	  System.out.println(signedInUser.name + " has been received");
+	  //System.out.println(signedInUser.name + " has been received");
 	  return signedInUser;
   }
 
