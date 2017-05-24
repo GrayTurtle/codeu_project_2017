@@ -39,8 +39,6 @@ public final class ClientMessage {
 
   private Message current = null;
 
-  private final Map<Uuid, Message> messageByUuid = new HashMap<>();
-
   public Conversation conversationHead;
   private final List<Message> conversationContents = new ArrayList<>();
 

@@ -119,7 +119,6 @@ public final class Server {
 			    prevConversation = newConversation;
 	  		}
 	  		else {
-	  			//LOG.info("Not handling connection...");
 	  			   if (newUser != null && !newUser.equals(prevUser)) {
 	  				   Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_USER_RESPONSE);
 	  				   Serializers.nullable(User.SERIALIZER).write(connection.out(), newUser);

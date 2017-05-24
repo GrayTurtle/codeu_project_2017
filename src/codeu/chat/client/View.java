@@ -99,7 +99,6 @@ public final class View implements BasicView, LogicalView{
 				  while (true) {
 					  if (in.ready()) {
 						      int type = Serializers.INTEGER.read(source.in());
-						      System.out.println(type + " mapppsssss");
 						      if (type == NetworkCode.NEW_USER_RESPONSE) {
 						    	  LOG.info("A new user has been received.");
 						    	  newUser = Serializers.nullable(User.SERIALIZER).read(source.in());
@@ -113,8 +112,6 @@ public final class View implements BasicView, LogicalView{
 							    		  }
 							    	  });
 						    	  }
-						    	  latch.countDown();
-						    	  latch = new CountDownLatch(1); 
 						      }
 						      else if (type == NetworkCode.NEW_CONVERSATION_RESPONSE) { 
 						    	  newConversation = Serializers.nullable(Conversation.SERIALIZER).read(source.in());
@@ -126,9 +123,7 @@ public final class View implements BasicView, LogicalView{
 						    		  public void run() {
 						    			  mainChatPage.fillNewConversation(newConversation);
 						    		  }
-						    	  });
-						    	  latch.countDown();
-						    	  latch = new CountDownLatch(1);   
+						    	  }); 
 						      }
 						      else if (type == NetworkCode.NEW_MESSAGE_RESPONSE) { 
 						    	  LOG.info("A new message has been received.");
@@ -151,45 +146,30 @@ public final class View implements BasicView, LogicalView{
 								    	  });
 						    		  }
 						    	  }
-						    	  latch.countDown();
-						    	  latch = new CountDownLatch(1);  
 						      }
 						      else if (type == NetworkCode.CHECK_USER_RESPONSE) {
 								  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
 								  signedInUser = validUser;
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_USERS_EXCLUDING_RESPONSE) {
 								  users.addAll(Serializers.collection(User.SERIALIZER).read(source.in()));
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_ALL_CONVERSATIONS_RESPONSE) { 
 								  summaries.addAll(Serializers.collection(ConversationSummary.SERIALIZER).read(source.in()));
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_MESSAGES_BY_RANGE_RESPONSE) { 
 								  messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
 								  getMessageById = Message.SERIALIZER.read(source.in());
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) { 
 								  messageCount = Serializers.INTEGER.read(source.in());
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
 							  else if (type == NetworkCode.GET_CONVERSATIONS_BY_ID_RESPONSE) { 
 								  conversations.addAll(Serializers.collection(Conversation.SERIALIZER).read(source.in()));
-								  latch.countDown();
-								  latch = new CountDownLatch(1);
 							  }
+						      countDownAndRenew();
 					  } 
 					  Thread.sleep(10);
 				  } 
@@ -200,6 +180,15 @@ public final class View implements BasicView, LogicalView{
 			  catch (InterruptedException ex) {
 				  LOG.error("Thread could not sleep", ex);
 			  }
+	  }
+	  
+	  /**
+	   * releases the latch on the main thread and 
+	   * renews it
+	   */
+	  public void countDownAndRenew() {
+		  latch.countDown();
+		  latch = new CountDownLatch(1);
 	  }
 
   }
@@ -257,6 +246,9 @@ public final class View implements BasicView, LogicalView{
       Serializers.INTEGER.write(source.out(), NetworkCode.GET_CONVERSATIONS_BY_ID_REQUEST);
       Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
       
+      // Pauses this thread
+      // to allow ClientConnection to 
+      // continue
       latch.await();
       
     } catch (Exception ex) {
