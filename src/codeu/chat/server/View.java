@@ -48,11 +48,6 @@ public final class View implements BasicView, LogicalView, SinglesView {
   public View(Model model) {
     this.model = model;
   }
-  
- /* public Collection<User> newUsersAdded() {
-	  return intersect(model.userById(), model.getAllUsers());
-  }*/
-
 
   @Override
   public Collection<User> getUsers(Collection<Uuid> ids) {

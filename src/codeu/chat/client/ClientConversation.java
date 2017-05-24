@@ -46,8 +46,6 @@ public final class ClientConversation {
   private final ClientUser userContext;
   private ClientMessage messageContext = null;
   
-  public List<String> test = null;
-  
   private final Map<Uuid, Conversation> conversationsByUuid = new HashMap<>();
 
   // This is the set of conversations known to the server.
@@ -73,6 +71,7 @@ public final class ClientConversation {
 	  @Override
 	  public int compare(ConversationSummary a, ConversationSummary b) {
 		  if (!Uuid.equals(a.lastMessage, Uuid.NULL) && !Uuid.equals(b.lastMessage, Uuid.NULL)) {
+			  
 			  Message messageA = view.getMessageById(a.lastMessage);
 			  Message messageB = view.getMessageById(b.lastMessage);
 			  if (messageA.creation.inMs() > messageB.creation.inMs()) return -1;
@@ -82,9 +81,6 @@ public final class ClientConversation {
 		  }
 		  if (!Uuid.equals(a.lastMessage, Uuid.NULL)) return -1;
 		  if (!Uuid.equals(b.lastMessage, Uuid.NULL)) return 1;
-		  
-		  if (a.creation.inMs() > b.creation.inMs()) return -1;
-		  else if (a.creation.inMs() < b.creation.inMs()) return 1;
 		  
 	  return 0;
 	  }
@@ -182,14 +178,11 @@ public final class ClientConversation {
 
   // Get a single conversation from the server.
   public Conversation getConversation(Uuid conversationId) {
-	System.out.println(this.getClass().toString() + " getConversation()");
-	if (conversationsByUuid.size() == 0) {
+	  // TODO: Could be optimized by saving conversations in memory
 	    for (final Conversation c : view.getConversations(Arrays.asList(conversationId))) {
-	    	conversationsByUuid.put(c.id, c);
-	    	//return c;
+	    	return c;
 	    }
-	}
-    if (conversationsByUuid.containsKey(conversationId)) return conversationsByUuid.get(conversationId);
+
     return null;
   }
 
@@ -242,7 +235,12 @@ public final class ClientConversation {
   // the current Conversation, including its messages.
   public void updateAllConversations(boolean currentChanged) {
 	System.out.println(this.getClass().toString() + " updateAllConversations()");
-	if (summariesByUuid.size() == 0) {
+	// TODO: Conversation summaries aren't updated with lastMessage of
+	// a conversation so removing if statement (if (summariesByUuid.size() == 0)) to allow re-order of conversations,
+	// but this should be optimized to lower the number of calls to the server.
+	// TODO: TAKE OUT CONVERSATION AND THEN PLACE IT BACK WHEN FINISHED
+	
+	//if (summariesByUuid.size() == 0) {
 	    summariesByUuid.clear();
 	    summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
 	    
@@ -253,8 +251,8 @@ public final class ClientConversation {
 	      summariesSortedByTitle.insert(cs.title, cs);
 	      summariesSortedByCreationTime.put(cs, cs.title);
 	    }
-	    
-	}
+	
+	
 	
 	if (currentChanged) {
 	    updateCurrentConversation();
@@ -263,7 +261,7 @@ public final class ClientConversation {
   }
   
   public void updateConversation(Conversation convo) {
-	  if (!conversationsByUuid.containsKey(convo.id)) {
+	  if (!summariesByUuid.containsKey(convo.summary.id)) {
 		  summariesByUuid.put(convo.summary.id, convo.summary);
 	      summariesSortedByTitle.insert(convo.summary.title, convo.summary);
 	      summariesSortedByCreationTime.put(convo.summary, convo.summary.title);

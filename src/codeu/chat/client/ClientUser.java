@@ -36,7 +36,7 @@ public final class ClientUser {
 
   private User current = null;
 
-  private final Map<Uuid, User> usersById = new HashMap<>();
+  public final Map<Uuid, User> usersById = new HashMap<>();
 
   // This is the set of users known to the server, sorted by name.
   private Store<String, User> usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
@@ -110,13 +110,10 @@ public final class ClientUser {
 
     // changed from controller to view
     final User user = (validInputs) ? view.newUser(name, password) : null;
-    
-    System.out.println(" IN ADD USER WITH NEW USER " + user.name);
+
 
     // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
     current = user;
-    
-    
 
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
@@ -124,8 +121,6 @@ public final class ClientUser {
       return false;
     } else {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
-      //usersById.put(user.id, user);
-  	  //usersByName.insert(user.name, user);
       updateUsers();
     }
 

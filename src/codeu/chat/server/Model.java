@@ -105,7 +105,6 @@ public final class Model {
 		  user = ds.userLogin(name, password);
 	  }
 	  catch (Exception ex) {
-			System.out.println("Logging in a user did not work.");
 			ex.printStackTrace(); 
 	  }
 	  
@@ -166,7 +165,6 @@ public final class Model {
 	// Save the information in the conversation table
 	try {
 		ds.addConversation(conversation);
-		System.out.println("ADDING A CONVERSATION!");
 	}
 	catch (Exception ex) {
 		System.out.println("Saving a conversation did not work.");

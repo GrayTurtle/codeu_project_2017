@@ -76,12 +76,12 @@ public class Controller implements BasicController {
       
       LOG.info("newUser: Request completed.");
 
-      /*if (Serializers.INTEGER.read(source.in()) == NetworkCode.NEW_USER_RESPONSE) {
+      if (Serializers.INTEGER.read(source.in()) == NetworkCode.NEW_USER_RESPONSE) {
         response = Serializers.nullable(User.SERIALIZER).read(source.in());
         LOG.info("newUser: Response completed.");
       } else {
         LOG.error("Response from server failed.");
-      }*/
+      }
   
     } catch (Exception ex) {
       System.out.println("ERROR: Exception during call on server. Check log for details.");

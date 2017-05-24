@@ -185,6 +185,7 @@ public class MainChatPage {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
+        System.out.println((selectedConvo != null) ? "IT IS NOT NULL--------" + selectedConvo.title : "NEED TO HIDE++++++++++" );
         if (selectedConvo != null) {
             clientContext.conversation.setCurrent(selectedConvo);
             updateCurrentConversation(selectedConvo);
@@ -261,7 +262,7 @@ public class MainChatPage {
                 // populate the list of messages with the current conversation's updated messages
                 fillMessagesList(clientContext.conversation.getCurrent());
 
-                //reorder conversations list
+                // reorder conversations list
                 fillConversationsList(conversations);
             }
         }
@@ -286,15 +287,10 @@ public class MainChatPage {
         clientContext.conversation.updateAllConversations(false);
         conversations.getItems().clear();
 
-        /*Map<ConversationSummary, String> test  = clientContext.conversation.getSummariesByCreationTime();
-        System.out.println(test.size());*/
         for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.add(conv.title);
         }
         
-        /*for (final String title : clientContext.conversation.test) {
-        	convoList.add(title);
-        }*/
     }
 
     /**
@@ -304,7 +300,7 @@ public class MainChatPage {
      */
     private void fillMessagesList(ConversationSummary conversation) {
         messages.getItems().clear();
-
+        if (conversation != null) System.out.println("SELECTED CONVERSATION IS " + conversation.title + "LIFEEEEEE");
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
@@ -338,19 +334,43 @@ public class MainChatPage {
         }
     }
     
-    // add new user
+    /**
+     * Updates GUI with a new user that has signed up
+     * @param newUser
+     */
     public void fillNewUser(User newUser) {
-    	System.out.println("Adding new user...");
-    	userName = new Text(newUser.name);
-    	//colorizeUsername(newUser.id);
-    	usersList.add(userName);
+    	if (!newUser.equals(clientContext.user.getCurrent())) {
+	    	System.out.println("Adding new user...");
+	    	userName = new Text(newUser.name);
+	    	colorizeUsername(newUser.id);
+	    	usersList.add(userName);
+    	}
     }
     
+    /**
+     *  Updates GUI with conversation sent by other active users
+     * @param newConversation
+     */
     public void fillNewConversation(Conversation newConversation) {
     	System.out.println("Adding new conversation...");
-    	//userName = new Text(newUser.name);
-    	//colorizeUsername(newUser.id);
     	convoList.add(newConversation.title);
+    }
+    
+    /**
+     * Updates GUI with message sent by other active users
+     * @param m
+     */
+    public void fillNewMessage(Message m) {
+    	final String authorName = clientContext.user.getName(m.author);
+        userName = new Text(authorName + ": ");
+
+        colorizeUsername(m.author);
+
+        final String displayString = String.format("[%s]: %s", m.creation, m.content);
+
+        Text displayStringText = new Text(displayString);
+        TextFlow displayStringFlow = new TextFlow(userName, displayStringText);
+        messageList.add(displayStringFlow);
     }
 
 

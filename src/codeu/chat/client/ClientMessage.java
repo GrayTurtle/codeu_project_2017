@@ -25,6 +25,7 @@ import codeu.chat.common.Message;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Method;
 import codeu.chat.util.Uuid;
+import javafx.application.Platform;
 
 public final class ClientMessage {
 
@@ -40,7 +41,7 @@ public final class ClientMessage {
 
   private final Map<Uuid, Message> messageByUuid = new HashMap<>();
 
-  private Conversation conversationHead;
+  public Conversation conversationHead;
   private final List<Message> conversationContents = new ArrayList<>();
 
   private final ClientUser userContext;
@@ -108,11 +109,12 @@ public final class ClientMessage {
 	System.out.println(this.getClass().toString() + " addMessage()");
     final boolean validInputs = isValidBody(body) && (author != null) && (conversation != null);
 
-    final Message message = (validInputs) ? controller.newMessage(author, conversation, body) : null;
+    final Message message = (validInputs) ? view.newMessage(author, conversation, body) : null;
 
     if (message == null) {
       System.out.format("Error: message not created - %s.\n",
           (validInputs) ? "server error" : "bad input value");
+      return;
     } else {
       LOG.info("New message:, Author= %s UUID= %s", author, message.id);
       current = message;
@@ -216,12 +218,11 @@ public final class ClientMessage {
           conversationHead.lastMessage);
 
       Uuid nextMessageId = getCurrentMessageFetchId(replaceAll);
-
+      
       //  Stay in loop until all messages read (up to safety limit)
       while (!nextMessageId.equals(Uuid.NULL) && conversationContents.size() < MESSAGE_MAX_COUNT) {
 
         for (final Message msg : view.getMessages(nextMessageId, MESSAGE_FETCH_COUNT)) {
-
           conversationContents.add(msg);
 
           // Race: message possibly added since conversation fetched.  If that occurs,

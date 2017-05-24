@@ -46,8 +46,11 @@ final class SimpleGuiClientMain {
     final RemoteAddress address = RemoteAddress.parse(args[0]);
 
 		    try (
-		      final ConnectionSource source = new ClientConnectionSource(address.host, 2008)
+		      final ConnectionSource source = new ClientConnectionSource(address.host, address.port)
 		    ) {
+		      // Creating one single connection for the entire
+		      // client session and sending that to both the controller
+		      // and view.
 		      Connection client = source.connect();
 		      final Controller controller = new Controller(client);
 		      final View view = new View(client);
@@ -68,14 +71,11 @@ final class SimpleGuiClientMain {
     //final ChatGuiFX chatGuiFX = new ChatGuiFX(controller, view);
 
     final ChatGuiFX chatGuiFX = new ChatGuiFX();
-    view.chatGuiFX = chatGuiFX;
 
     LOG.info("Created client");
 
     chatGuiFX.launch(controller, view);
     
-    
-
     LOG.info("chat client is running.");
   }
 }
