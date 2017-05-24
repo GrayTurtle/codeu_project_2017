@@ -68,10 +68,12 @@ final class SimpleGuiClientMain {
     //final ChatGuiFX chatGuiFX = new ChatGuiFX(controller, view);
 
     final ChatGuiFX chatGuiFX = new ChatGuiFX();
+    view.chatGuiFX = chatGuiFX;
 
     LOG.info("Created client");
 
     chatGuiFX.launch(controller, view);
+    
     
 
     LOG.info("chat client is running.");

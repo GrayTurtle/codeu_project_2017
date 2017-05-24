@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
 import codeu.chat.common.User;
@@ -39,6 +40,7 @@ public final class ClientUser {
 
   // This is the set of users known to the server, sorted by name.
   private Store<String, User> usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
+  
 
   public ClientUser(Controller controller, View view) {
     this.controller = controller;
@@ -83,7 +85,6 @@ public final class ClientUser {
 	        current = newCurrent;
 	      }
 	    }
-	    System.out.println((prev != current) ? "trueeeeeee" : "falseeeeeee");
 	    return (prev != current);
     }
 
@@ -107,10 +108,15 @@ public final class ClientUser {
     boolean validInputs = isValidInput(name);
 
 
-    final User user = (validInputs) ? controller.newUser(name, password) : null;
+    // changed from controller to view
+    final User user = (validInputs) ? view.newUser(name, password) : null;
+    
+    System.out.println(" IN ADD USER WITH NEW USER " + user.name);
 
     // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
     current = user;
+    
+    
 
     if (user == null) {
       System.out.format("Error: user not created - %s.\n",
@@ -118,6 +124,8 @@ public final class ClientUser {
       return false;
     } else {
       LOG.info("New user complete, Name= \"%s\" UUID=%s", user.name, user.id);
+      //usersById.put(user.id, user);
+  	  //usersByName.insert(user.name, user);
       updateUsers();
     }
 
@@ -125,7 +133,7 @@ public final class ClientUser {
   }
 
   public void showAllUsers() {
-    updateUsers();
+    //updateUsers();
     for (final User u : usersByName.all()) {
       printUser(u);
     }
@@ -150,12 +158,23 @@ public final class ClientUser {
   }
 
   public void updateUsers() {
-    usersById.clear();
-    usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-    for (final User user : view.getUsersExcluding(EMPTY)) {
-      usersById.put(user.id, user);
-      usersByName.insert(user.name, user);
-    }
+	if (usersById.size() == 0) {
+	    usersById.clear();
+	    usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
+	    for (final User user : view.getUsersExcluding(EMPTY)) {
+	      usersById.put(user.id, user);
+	      usersByName.insert(user.name, user);
+	    }
+	}
+  }
+  
+  public void updatedUsers(User newUser) {
+	  if (current != null) {
+		  if (!usersById.containsKey(newUser.id)) {
+			  usersById.put(newUser.id, newUser);
+			  usersByName.insert(newUser.name, newUser);
+		  }
+	  }
   }
 
   public static String getUserInfoString(User user) {

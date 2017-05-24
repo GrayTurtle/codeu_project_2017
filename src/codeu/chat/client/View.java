@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import codeu.chat.client.simplegui.ChatGuiFX;
+import codeu.chat.client.simplegui.MainChatPage;
 import codeu.chat.common.BasicView;
 import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
@@ -34,6 +36,7 @@ import codeu.chat.util.Time;
 import codeu.chat.util.Uuid;
 import codeu.chat.util.connections.Connection;
 import codeu.chat.util.connections.ConnectionSource;
+import javafx.application.Platform;
 
 // VIEW
 //
@@ -50,16 +53,33 @@ public final class View implements BasicView, LogicalView{
   
   // Pauses the main thread to allow ClientConnection 
   // to parse the newly received data.
-  private CountDownLatch latch = new CountDownLatch(1);
+  public CountDownLatch latch = new CountDownLatch(1);
+  public CountDownLatch latch_2 = new CountDownLatch(1);
   
   // Post-processing Variables for Client and Server
   private User signedInUser = null;
   // getUsersExcluding()
-  Collection<User> users = new ArrayList<>();
+  private Collection<User> users = new ArrayList<>();
   // getAllConversations()
-  Collection<ConversationSummary> summaries;
+  private Collection<ConversationSummary> summaries;
   // getMessages()
-  Collection<Message> messages;
+  private Collection<Message> messages;
+  // getMessageById
+  private Message getMessageById;
+  // getMessageCount
+  int messageCount = 0;
+  
+  // FROM CONTROLLER
+  // newUser
+  private User newUser;
+  private Conversation newConversation;
+  
+  // Reference to ClientContext
+  public ClientContext clientContext;
+  
+  // Reference to the GUI
+  public ChatGuiFX chatGuiFX;
+  public MainChatPage mainChatPage;
   
 
   
@@ -78,8 +98,73 @@ public final class View implements BasicView, LogicalView{
 				  while (true) {
 					  if (in.ready()) {
 						      int type = Serializers.INTEGER.read(source.in());
-						      if (type == NetworkCode.NEW_USER_RESPONSE) {} 
-							  if (type == NetworkCode.CHECK_USER_RESPONSE) {
+						      System.out.println(type + " mapppsssss");
+						      if (type == NetworkCode.NEW_USER_RESPONSE) {
+						    	  System.out.println("A NEW USER IS BEING SENT TO YOU!");
+						    	  newUser = Serializers.nullable(User.SERIALIZER).read(source.in());
+						    	  clientContext.user.updatedUsers(newUser);
+						    	  /*if (latch.getCount() == 2) {
+						    		  System.out.println("LATCH COUNTDOWN IS 2");
+						    		  latch_2.countDown();
+						    		  latch_2.countDown();
+						    		  //latch = new CountDownLatch(1);
+						    	  }
+						    	  else {
+						    		  if (mainChatPage == null) {
+						    			  mainChatPage = chatGuiFX.mainPage;
+						    			  System.out.println("mainChatPage is null");
+						    		  }
+						    		  mainChatPage.fillNewUser(newUser);
+						    	  }
+						    	  latch_2 = new CountDownLatch(2);*/
+						    	  //boolean otherClient = false;
+						    	  //if ((otherClient = Serializers.BOOLEAN.read(source.in())) == true) {
+						    		  
+						    	  //}
+						    		  Platform.runLater(new Runnable() {
+							    		  
+							    		  @Override
+							    		  public void run() {
+							    			  mainChatPage.fillNewUser(newUser);
+							    		  }
+							    	  });
+						    	  latch.countDown();
+						    	  latch = new CountDownLatch(1); 
+						      }
+						      else if (type == NetworkCode.NEW_CONVERSATION_RESPONSE) { 
+						    	  newConversation = Serializers.nullable(Conversation.SERIALIZER).read(source.in());
+						    	  System.out.println("A NEW CONVERSATION IS BEING SENT TO YOU!");
+						    	  clientContext.conversation.updateConversation(newConversation);
+						    	  /*if (latch_2.getCount() == 2) {
+						    		  System.out.println("LATCH COUNTDOWN IS 2");
+						    		  latch_2.countDown();
+						    		  latch_2.countDown();
+						    		  //latch = new CountDownLatch(1);
+						    	  }
+						    	  else {
+						    		  if (mainChatPage == null) {
+						    			  mainChatPage = chatGuiFX.mainPage;
+						    			  System.out.println("mainChatPage is null");
+						    		  }
+						    		  mainChatPage.fillNewConversation(newConversation);
+						    	  }
+						    	  latch_2 = new CountDownLatch(2);*/
+						    	 // boolean otherClient = false;
+						    	  //if ((otherClient = Serializers.BOOLEAN.read(source.in())) == true) {
+						    	  Platform.runLater(new Runnable() {
+						    		  
+						    		  @Override
+						    		  public void run() {
+						    			  mainChatPage.fillNewConversation(newConversation);
+						    		  }
+						    	  });
+						    		  
+						    	  //}
+						    	  latch.countDown();
+						    	  latch = new CountDownLatch(1); 
+						    	  
+						      }
+						      else if (type == NetworkCode.CHECK_USER_RESPONSE) {
 								  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
 								  System.out.println((validUser != null) ?  validUser.name + " was received from the server..." : " valid user is null...");
 								  signedInUser = validUser;
@@ -103,6 +188,17 @@ public final class View implements BasicView, LogicalView{
 								  messages.addAll(Serializers.collection(Message.SERIALIZER).read(source.in()));
 								  latch.countDown();
 								  latch = new CountDownLatch(1);
+							  }
+							  else if (type == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
+								  getMessageById = Message.SERIALIZER.read(source.in());
+								  latch.countDown();
+								  latch = new CountDownLatch(1);
+							  }
+							  else if (type == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) { 
+								  System.out.println("getting a message response");
+								  messageCount = Serializers.INTEGER.read(source.in());
+								  latch_2.countDown();
+								  latch_2 = new CountDownLatch(1);
 							  }
 					  } 
 					  Thread.sleep(10);
@@ -379,18 +475,12 @@ public final class View implements BasicView, LogicalView{
   }
 
   public int getMessageCount(Uuid userid) {
-	  int messageCount = 0;
 	  System.out.println("HERE 12");
 	  try {
 		  Serializers.INTEGER.write(source.out(), NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST);
 		  Uuid.SERIALIZER.write(source.out(), userid);
 
-		  if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE) {
-			  messageCount = Serializers.INTEGER.read(source.in());
-		  }
-		  else {
-		      LOG.error("Response from server failed.");
-		  }
+		  latch_2.await();
 	  }
 	  catch (Exception ex) {
 	      System.out.println("ERROR: Exception during call on server. Check log for details.");
@@ -401,25 +491,64 @@ public final class View implements BasicView, LogicalView{
   }
   
   public Message getMessageById(Uuid messageid) {
-	  Message message = null;
+	  getMessageById = null;
 	  System.out.println("HERE 13");
 	  try {
 		  Serializers.INTEGER.write(source.out(), NetworkCode.GET_MESSAGE_BY_ID_REQUEST);
 		  Uuid.SERIALIZER.write(source.out(), messageid);
-
-		  if (Serializers.INTEGER.read(source.in()) == NetworkCode.GET_MESSAGE_BY_ID_RESPONSE) {
-			  message = Message.SERIALIZER.read(source.in());
-		  }
-		  else {
-		      LOG.error("Response from server failed.");
-		  }
+		  
+		  latch.await();
 	  }
 	  catch (Exception ex) {
 	      System.out.println("ERROR: Exception during call on server. Check log for details.");
 	      LOG.error(ex, "Exception during call on server.");
 	    }
 	  
-  return message;
+  return getMessageById;
   }
+  
+  
+  // Added methods from the controller
+  public User newUser(String name, String password) {
+
+	    newUser = null;
+
+	    try {
+
+	      Serializers.INTEGER.write(source.out(), NetworkCode.NEW_USER_REQUEST);
+	      Serializers.STRING.write(source.out(), name);
+	      
+	      // ADDED BY MALIK
+	      Serializers.STRING.write(source.out(), password);
+	      
+	      LOG.info("newUser: Request completed.");
+	      
+	      latch.await();
+	    } catch (Exception ex) {
+	      System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	    }
+
+	    return newUser;
+	  }
+  
+  public Conversation newConversation(String title, Uuid owner)  {
+
+	    newConversation = null;
+
+	    try {
+
+	      Serializers.INTEGER.write(source.out(), NetworkCode.NEW_CONVERSATION_REQUEST);
+	      Serializers.STRING.write(source.out(), title);
+	      Uuid.SERIALIZER.write(source.out(), owner);
+
+	      latch.await();
+	    } catch (Exception ex) {
+	      System.out.println("ERROR: Exception during call on server. Check log for details.");
+	      LOG.error(ex, "Exception during call on server.");
+	    }
+
+	    return newConversation;
+	  }
 
 }

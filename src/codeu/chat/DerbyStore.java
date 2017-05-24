@@ -65,11 +65,6 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	private final String getMessageById = "SELECT * FROM " + messageTableName + " WHERE messageid = ?";
 	private final String getMessageCountById = "SELECT messageCount FROM " + userMessageCountTableName + " WHERE userid = ?";
 	
-	// TODO: Parameterize the getAll functions to take in these prepared statements
-	private final String getNewUsersGreaterThanSystemTime = "SELECT * FROM " + userTableName + " WHERE creation >= ?";
-	private final String getNewConversationsGreaterThanSystemTime = "SELECT * FROM " + conversationTableName + " WHERE creation >= ?";
-	private final String getNewMessagesGreaterThanSystemTime = "SELECT * FROM " + messageTableName + " WHERE creation >= ?";
-	
 	private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
 	
 	/**

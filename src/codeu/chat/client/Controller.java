@@ -14,10 +14,6 @@
 
 package codeu.chat.client;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.Thread;
-
 import codeu.chat.common.BasicController;
 import codeu.chat.common.Conversation;
 import codeu.chat.common.Message;
@@ -25,6 +21,7 @@ import codeu.chat.common.NetworkCode;
 import codeu.chat.common.User;
 import codeu.chat.util.Logger;
 import codeu.chat.util.Serializers;
+import codeu.chat.util.Time;
 import codeu.chat.util.Uuid;
 import codeu.chat.util.connections.Connection;
 import codeu.chat.util.connections.ConnectionSource;
@@ -67,7 +64,7 @@ public class Controller implements BasicController {
   @Override
   public User newUser(String name, String password) {
 
-    User response = null;
+    User response = new User(Uuid.NULL, "", "", Time.now());
 
     try {
 
@@ -79,12 +76,13 @@ public class Controller implements BasicController {
       
       LOG.info("newUser: Request completed.");
 
-      if (Serializers.INTEGER.read(source.in()) == NetworkCode.NEW_USER_RESPONSE) {
+      /*if (Serializers.INTEGER.read(source.in()) == NetworkCode.NEW_USER_RESPONSE) {
         response = Serializers.nullable(User.SERIALIZER).read(source.in());
         LOG.info("newUser: Response completed.");
       } else {
         LOG.error("Response from server failed.");
-      }
+      }*/
+  
     } catch (Exception ex) {
       System.out.println("ERROR: Exception during call on server. Check log for details.");
       LOG.error(ex, "Exception during call on server.");

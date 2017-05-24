@@ -105,20 +105,9 @@ public final class Server {
 	  		if (in.ready()) {
 				LOG.info("Handling connection...");
 				
-				timeline.scheduleNow(new Runnable() {
-						
-					@Override
-					public void run() {
-						try {
-						final boolean success = onMessage(connection.in(), connection.out());
-						LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
-						}
-						catch (IOException ex) {
-							LOG.error("Error in tranfering data", ex);
-						}
-					}
-				
-				});   			          
+				final boolean success = onMessage(connection.in(), connection.out());
+				LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
+			    //prevUser = newUser;	          
 	  		}
 	  		else {
 	  			//LOG.info("Not handling connection...");
@@ -146,6 +135,7 @@ public final class Server {
 	  }
 	  catch (IOException ex) {
 		  LOG.error("Error in creating buffer", ex);
+		  ex.printStackTrace();
 	  }
 	  catch (InterruptedException ex) {
 		  LOG.error("Thread could not sleep", ex);
@@ -301,6 +291,8 @@ public final class Server {
   	} else if (type == NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST) {
   		final Uuid userid = Uuid.SERIALIZER.read(in);
   		
+  		System.out.println("GETTING MESSAGE");
+  		
   		int messageCount = 0;
   		try {
   			messageCount = model.getMessageCount(userid);
@@ -310,6 +302,7 @@ public final class Server {
   		}
   		
   		Serializers.INTEGER.write(out, NetworkCode.GET_USER_MESSAGE_COUNT_RESPONSE);
+  		System.out.println("SENDING MESSAGE");
   		Serializers.INTEGER.write(out, messageCount);
   		
   	} 

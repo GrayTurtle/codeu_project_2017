@@ -1,6 +1,8 @@
 package codeu.chat.client.simplegui;
 
 import codeu.chat.client.ClientContext;
+import codeu.chat.client.View;
+import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
 import codeu.chat.common.Message;
 import codeu.chat.common.User;
@@ -21,6 +23,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by Gabe on 5/19/17.
@@ -53,7 +56,10 @@ public class MainChatPage {
     // Allows for colorized text
     private Text userName;
 
-    public MainChatPage(ClientContext clientContext) {
+    public MainChatPage(ClientContext clientContext, View view) {
+    	
+    	
+    	view.mainChatPage = this;
 
         MainChatPage.clientContext = clientContext;
 
@@ -159,7 +165,7 @@ public class MainChatPage {
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-                convoList.add(name);
+                //convoList.add(name);
             }
         } else {
             // user is not signed in
@@ -280,9 +286,15 @@ public class MainChatPage {
         clientContext.conversation.updateAllConversations(false);
         conversations.getItems().clear();
 
+        /*Map<ConversationSummary, String> test  = clientContext.conversation.getSummariesByCreationTime();
+        System.out.println(test.size());*/
         for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.add(conv.title);
         }
+        
+        /*for (final String title : clientContext.conversation.test) {
+        	convoList.add(title);
+        }*/
     }
 
     /**
@@ -325,6 +337,22 @@ public class MainChatPage {
             }
         }
     }
+    
+    // add new user
+    public void fillNewUser(User newUser) {
+    	System.out.println("Adding new user...");
+    	userName = new Text(newUser.name);
+    	//colorizeUsername(newUser.id);
+    	usersList.add(userName);
+    }
+    
+    public void fillNewConversation(Conversation newConversation) {
+    	System.out.println("Adding new conversation...");
+    	//userName = new Text(newUser.name);
+    	//colorizeUsername(newUser.id);
+    	convoList.add(newConversation.title);
+    }
+
 
     // TODO: set up a loop to where this updates every half sec or so
     /**
@@ -370,5 +398,6 @@ public class MainChatPage {
         fillMessagesList(clientContext.conversation.getCurrent());
         fillConversationsList(conversations);
         fillUserList(users);
+  
     }
 }

@@ -166,6 +166,7 @@ public final class Model {
 	// Save the information in the conversation table
 	try {
 		ds.addConversation(conversation);
+		System.out.println("ADDING A CONVERSATION!");
 	}
 	catch (Exception ex) {
 		System.out.println("Saving a conversation did not work.");
