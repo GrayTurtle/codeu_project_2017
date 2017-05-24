@@ -182,7 +182,7 @@ public final class ClientConversation {
 	    for (final Conversation c : view.getConversations(Arrays.asList(conversationId))) {
 	    	return c;
 	    }
-
+	    
     return null;
   }
 
@@ -240,7 +240,6 @@ public final class ClientConversation {
 	// but this should be optimized to lower the number of calls to the server.
 	// TODO: TAKE OUT CONVERSATION AND THEN PLACE IT BACK WHEN FINISHED
 	
-	//if (summariesByUuid.size() == 0) {
 	    summariesByUuid.clear();
 	    summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
 	    

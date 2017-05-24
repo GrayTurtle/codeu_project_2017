@@ -185,7 +185,6 @@ public class MainChatPage {
         // get contents of conversation
         ConversationSummary selectedConvo = lookupByTitle(data, index);
         // set new conversation
-        System.out.println((selectedConvo != null) ? "IT IS NOT NULL--------" + selectedConvo.title : "NEED TO HIDE++++++++++" );
         if (selectedConvo != null) {
             clientContext.conversation.setCurrent(selectedConvo);
             updateCurrentConversation(selectedConvo);
@@ -300,7 +299,6 @@ public class MainChatPage {
      */
     private void fillMessagesList(ConversationSummary conversation) {
         messages.getItems().clear();
-        if (conversation != null) System.out.println("SELECTED CONVERSATION IS " + conversation.title + "LIFEEEEEE");
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
@@ -361,6 +359,7 @@ public class MainChatPage {
      * @param m
      */
     public void fillNewMessage(Message m) {
+    	System.out.println("Adding new message...");
     	final String authorName = clientContext.user.getName(m.author);
         userName = new Text(authorName + ": ");
 

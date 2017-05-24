@@ -152,6 +152,7 @@ public final class View implements BasicView, LogicalView{
 						    		  }
 						    	  }
 						    	  latch.countDown();
+						    	  latch = new CountDownLatch(1);  
 						      }
 						      else if (type == NetworkCode.CHECK_USER_RESPONSE) {
 								  User validUser = Serializers.nullable(User.SERIALIZER).read(source.in());
@@ -311,14 +312,12 @@ public final class View implements BasicView, LogicalView{
 
   @Override
   public Collection<User> getUsersExcluding(Collection<Uuid> ids) {
-	System.out.println("HERE 6");
     users = new ArrayList<>();
 
     try {
       Serializers.INTEGER.write(source.out(), NetworkCode.GET_USERS_EXCLUDING_REQUEST);
       Serializers.collection(Uuid.SERIALIZER).write(source.out(), ids);
       
-      System.out.println("WAITING TO GET USER EXCLUDING");
       latch.await();
       
     } catch (Exception ex) {
