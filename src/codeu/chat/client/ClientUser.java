@@ -60,14 +60,6 @@ public final class ClientUser {
 
   }
 
-
-  // Validate a user input string
-  static public boolean isValidInput(String userInput) {
-
-    return Pattern.matches("[a-zA-Z0-9]+&&[^/s',;]", userInput);
-  }
-
-
   public boolean hasCurrent() {
     return (current != null);
   }
