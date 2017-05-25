@@ -11,6 +11,7 @@ import codeu.chat.util.store.Store;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -31,6 +32,8 @@ import java.util.concurrent.CountDownLatch;
 public class MainChatPage {
 
     private static ClientContext clientContext;
+
+    private static final int BUTTON_MIN_HEIGHT = 40;    // Height of buttons on this screen
 
     // Collection of all UI elements on the page
     private Scene mainChatScene;
@@ -73,14 +76,21 @@ public class MainChatPage {
         VBox chatVBox = new VBox();
         // holds the conversations
         VBox convosVBox = new VBox();
+        // holds buttons to interact with conversations
+        HBox convosButtonBox = new HBox();
+
         // contains the boxes
         BorderPane container = new BorderPane();
+
         // button for sending a message
         Button sendButton = new Button("Send");
         // button for updating the client
         Button updateButton = new Button("Update");
         // button for adding conversation
         Button addConvoButton = new Button("Add Conversation");
+        // button for leaving conversation
+        Button leaveConvoButton = new Button("Leave Conversation");
+
         Text userTitle = new Text("Users");
         // changed based on which is select
         chatTitle = new Text("Conversation");
@@ -100,6 +110,8 @@ public class MainChatPage {
 
         // add listener for when user presses add conversation & add to the conversation list
         addConvoButton.setOnAction(e -> addConversation(e));
+        // add listener for when user wants to leave a conversation
+        leaveConvoButton.setOnAction(e -> leaveConversation(e));
         // add listener to the list of conversations to select a conversations
         conversations.setOnMouseClicked(e -> selectConversation(e));
         // add listener to the send button to send messages to the conversation
@@ -115,12 +127,15 @@ public class MainChatPage {
         HBox.setHgrow(userVBox, Priority.ALWAYS);
         HBox.setHgrow(chatVBox, Priority.ALWAYS);
         HBox.setHgrow(convosVBox, Priority.ALWAYS);
+        HBox.setHgrow(convosButtonBox, Priority.ALWAYS);
 
-        sendButton.setMinHeight(40);
-        updateButton.setMinHeight(40);
-        input.setMinHeight(40);
-        addConvoButton.setMinHeight(40);
+        sendButton.setMinHeight(BUTTON_MIN_HEIGHT);
+        updateButton.setMinHeight(BUTTON_MIN_HEIGHT);
+        input.setMinHeight(BUTTON_MIN_HEIGHT);
+        addConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
+        leaveConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
         addConvoButton.setMaxWidth(Double.MAX_VALUE);
+
         userTf.setMaxWidth(Double.MAX_VALUE);
         userTf.setMinHeight(30);
         chatTf.setMaxWidth(Double.MAX_VALUE);
@@ -129,12 +144,13 @@ public class MainChatPage {
         convosTf.setMinHeight(30);
         userVBox.setMaxWidth(150);
         chatVBox.setMaxWidth(Double.MAX_VALUE);
-        convosVBox.setMaxWidth(150);
+        convosVBox.setMaxWidth(268);
 
         hboxInput.getChildren().addAll(input, sendButton, updateButton);
         userVBox.getChildren().addAll(userTf, users);
         chatVBox.getChildren().addAll(chatTf, messages, hboxInput);
-        convosVBox.getChildren().addAll(convosTf, conversations, addConvoButton);
+        convosButtonBox.getChildren().addAll(leaveConvoButton, addConvoButton);
+        convosVBox.getChildren().addAll(convosTf, conversations, convosButtonBox);
         hboxClient.getChildren().addAll(userVBox, chatVBox, convosVBox);
         container.setCenter(hboxClient);
 
@@ -154,23 +170,48 @@ public class MainChatPage {
             dialog.setHeaderText("Create your conversation");
 
             // get input and add the name of the convo
-            String name = dialog.showAndWait().get();
+            String name;
+            Optional<String> result = dialog.showAndWait();
 
-            Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
+            // Once the user has typed in a name
+            if (result.isPresent()) {
 
-            if (summariesSortedByCreationTime.containsValue(name)) {
-                displayAlert("There is already a conversation with that name!");
-                return;
-            }
+                name = result.get();
+                Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
+
 
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
                 //convoList.add(name);
             }
-        } else {
+        }
+        else {
             // user is not signed in
             displayAlert("You're not signed in!");
         }
+    }
+
+    /**
+     * Confirms that the user wants to leave a particular conversation
+     * @param e
+     */
+    private void leaveConversation(ActionEvent e) {
+
+        //TODO: make sure user has actually selected a conversation first
+        // Pop up a dialog asking user if they really want to leave conversation
+        Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmationAlert.setTitle("Leave Conversation");
+        confirmationAlert.setHeaderText("Are you sure you want to leave this conversation?");
+        // Might be nice to specify which conversation they'd be leaving
+
+        Optional<ButtonType> result = confirmationAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // TODO: leave conversation
+        }
+        else {
+            confirmationAlert.close();
+        }
+
     }
 
     /**
@@ -402,7 +443,7 @@ public class MainChatPage {
     }
 
     /**
-     *
+     * Gets the Scene (collection of UI elements on page)
      * @return
      */
     public Scene getMainChatScene() {

@@ -1,5 +1,6 @@
 package codeu.chat.client.simplegui;
 
+import codeu.chat.client.ClientUser;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -12,7 +13,7 @@ public final class ChatGuiFX extends Application {
 
     private final static Logger.Log LOG = Logger.newLog(ChatGuiFX.class);
 
-    protected static final double WINDOW_WIDTH = 1000;
+    protected static final double WINDOW_WIDTH = 1120;
     protected static final double WINDOW_HEIGHT = 500;
 
     // Holds the scene that user is currently viewing
