@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
 
@@ -36,10 +37,11 @@ public final class ClientUser {
 
   private User current = null;
 
-  private final Map<Uuid, User> usersById = new HashMap<>();
+  public final Map<Uuid, User> usersById = new HashMap<>();
 
   // This is the set of users known to the server, sorted by name.
   private Store<String, User> usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
+  
 
   public ClientUser(Controller controller, View view) {
     this.controller = controller;
@@ -59,13 +61,17 @@ public final class ClientUser {
     return validInput;
 
   }
-
+  
   public boolean hasCurrent() {
     return (current != null);
   }
 
   public User getCurrent() {
     return current;
+  }
+  
+  public void setCurrent(User user) {
+	  this.current = user;
   }
 
   public boolean signInUser(String name, String password) {
@@ -104,7 +110,9 @@ public final class ClientUser {
     boolean validInputs = isValidInput(name);
 
 
-    final User user = (validInputs) ? controller.newUser(name, password) : null;
+    // changed from controller to view
+    final User user = (validInputs) ? view.newUser(name, password) : null;
+
 
 
     // TODO: have the user that signs up, go back & sign in so we can get rid of the line below
@@ -123,7 +131,7 @@ public final class ClientUser {
   }
 
   public void showAllUsers() {
-    updateUsers();
+    //updateUsers();
     for (final User u : usersByName.all()) {
       printUser(u);
     }
@@ -148,12 +156,23 @@ public final class ClientUser {
   }
 
   public void updateUsers() {
-    usersById.clear();
-    usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
-    for (final User user : view.getUsersExcluding(EMPTY)) {
-      usersById.put(user.id, user);
-      usersByName.insert(user.name, user);
-    }
+	if (usersById.size() == 0) {
+	    usersById.clear();
+	    usersByName = new Store<>(String.CASE_INSENSITIVE_ORDER);
+	    for (final User user : view.getUsersExcluding(EMPTY)) {
+	      usersById.put(user.id, user);
+	      usersByName.insert(user.name, user);
+	    }
+	}
+  }
+  
+  public void updatedUsers(User newUser) {
+	  if (current != null) {
+		  if (!usersById.containsKey(newUser.id)) {
+			  usersById.put(newUser.id, newUser);
+			  usersByName.insert(newUser.name, newUser);
+		  }
+	  }
   }
 
   public static String getUserInfoString(User user) {

@@ -19,14 +19,18 @@ public final class ChatGuiFX extends Application {
     // Holds the scene that user is currently viewing
     private Stage thestage;
 
-    private MainChatPage mainPage;
+    public MainChatPage mainPage;
 
     // variable that has the current state of the client (current user, conversation, etc)
     private static ClientContext clientContext;
-
+    
+    // variable that will keep reference to the view,
+    // so that the view can refer to the mainpage GUI
+    private static View clientView;
 
     public void setContext(Controller controller, View view) {
     	clientContext = new ClientContext(controller, view);
+    	clientView = view;
     }
 
     public void launch(Controller controller, View view) {
@@ -43,8 +47,7 @@ public final class ChatGuiFX extends Application {
 
         // Instantiate classes for different pages
         SignInPage signInPage = new SignInPage(this, ChatGuiFX.clientContext);
-        mainPage = new MainChatPage(ChatGuiFX.clientContext);
-
+        this.mainPage = new MainChatPage(ChatGuiFX.clientContext, clientView);
         // Start up with the sign in page
         thestage.setScene(signInPage.getSignInScene());
         thestage.show();
@@ -55,7 +58,6 @@ public final class ChatGuiFX extends Application {
      *
      */
     public void switchToMainPage() {
-
         mainPage.populate();
         thestage.setScene(mainPage.getMainChatScene());
     }

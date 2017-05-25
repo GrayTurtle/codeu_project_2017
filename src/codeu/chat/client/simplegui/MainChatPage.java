@@ -1,6 +1,8 @@
 package codeu.chat.client.simplegui;
 
 import codeu.chat.client.ClientContext;
+import codeu.chat.client.View;
+import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
 import codeu.chat.common.Message;
 import codeu.chat.common.User;
@@ -22,7 +24,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by Gabe on 5/19/17.
@@ -57,7 +59,10 @@ public class MainChatPage {
     // Allows for colorized text
     private Text userName;
 
-    public MainChatPage(ClientContext clientContext) {
+    public MainChatPage(ClientContext clientContext, View view) {
+    	
+    	
+    	view.mainChatPage = this;
 
         MainChatPage.clientContext = clientContext;
 
@@ -174,15 +179,10 @@ public class MainChatPage {
                 name = result.get();
                 Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
 
-                if (summariesSortedByCreationTime.containsValue(name)) {
-                    displayAlert("There is already a conversation with that name!");
-                    return;
-                }
 
-                if (!name.isEmpty() && name.length() > 0) {
-                    clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
-                    convoList.add(name);
-                }
+            if (!name.isEmpty() && name.length() > 0) {
+                clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
+                //convoList.add(name);
             }
         }
         else {
@@ -302,7 +302,7 @@ public class MainChatPage {
                 // populate the list of messages with the current conversation's updated messages
                 fillMessagesList(clientContext.conversation.getCurrent());
 
-                //reorder conversations list
+                // reorder conversations list
                 fillConversationsList(conversations);
             }
         }
@@ -330,6 +330,7 @@ public class MainChatPage {
         for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.add(conv.title);
         }
+        
     }
 
     /**
@@ -339,7 +340,6 @@ public class MainChatPage {
      */
     private void fillMessagesList(ConversationSummary conversation) {
         messages.getItems().clear();
-
         for (final Message m : clientContext.message.getConversationContents(conversation)) {
             // Display author name if available.  Otherwise display the author UUID.
             final String authorName = clientContext.user.getName(m.author);
@@ -372,6 +372,47 @@ public class MainChatPage {
             }
         }
     }
+    
+    /**
+     * Updates GUI with a new user that has signed up
+     * @param newUser
+     */
+    public void fillNewUser(User newUser) {
+    	if (!newUser.equals(clientContext.user.getCurrent())) {
+	    	System.out.println("Adding new user...");
+	    	userName = new Text(newUser.name);
+	    	colorizeUsername(newUser.id);
+	    	usersList.add(userName);
+    	}
+    }
+    
+    /**
+     *  Updates GUI with conversation sent by other active users
+     * @param newConversation
+     */
+    public void fillNewConversation(Conversation newConversation) {
+    	System.out.println("Adding new conversation...");
+    	convoList.add(newConversation.title);
+    }
+    
+    /**
+     * Updates GUI with message sent by other active users
+     * @param m
+     */
+    public void fillNewMessage(Message m) {
+    	System.out.println("Adding new message...");
+    	final String authorName = clientContext.user.getName(m.author);
+        userName = new Text(authorName + ": ");
+
+        colorizeUsername(m.author);
+
+        final String displayString = String.format("[%s]: %s", m.creation, m.content);
+
+        Text displayStringText = new Text(displayString);
+        TextFlow displayStringFlow = new TextFlow(userName, displayStringText);
+        messageList.add(displayStringFlow);
+    }
+
 
     // TODO: set up a loop to where this updates every half sec or so
     /**
@@ -417,5 +458,6 @@ public class MainChatPage {
         fillMessagesList(clientContext.conversation.getCurrent());
         fillConversationsList(conversations);
         fillUserList(users);
+  
     }
 }
