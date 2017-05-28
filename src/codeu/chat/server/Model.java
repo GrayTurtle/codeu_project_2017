@@ -105,7 +105,6 @@ public final class Model {
 		  user = ds.userLogin(name, password);
 	  }
 	  catch (Exception ex) {
-			System.out.println("Logging in a user did not work.");
 			ex.printStackTrace(); 
 	  }
 	  

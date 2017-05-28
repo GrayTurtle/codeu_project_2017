@@ -49,7 +49,6 @@ public final class View implements BasicView, LogicalView, SinglesView {
     this.model = model;
   }
 
-
   @Override
   public Collection<User> getUsers(Collection<Uuid> ids) {
     return intersect(model.userById(), ids);

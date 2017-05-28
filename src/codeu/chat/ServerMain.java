@@ -16,6 +16,8 @@
 package codeu.chat;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import codeu.chat.common.Relay;
 import codeu.chat.common.Secret;
@@ -33,6 +35,8 @@ import codeu.chat.util.connections.ServerConnectionSource;
 final class ServerMain {
 
   private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
+  
+  private static int myPort;
 
   public static void main(String[] args) {
 
@@ -46,7 +50,7 @@ final class ServerMain {
 
     LOG.info("============================= START OF LOG =============================");
 
-    final int myPort = Integer.parseInt(args[2]);
+    myPort = Integer.parseInt(args[2]);
     final byte[] secret = Secret.parse(args[1]);
 
     Uuid id = null;
@@ -93,19 +97,48 @@ final class ServerMain {
 
     LOG.info("Created server.");
 
-    while (true) {
-
-      try {
-
-        LOG.info("Established connection...");
-        final Connection connection = serverSource.connect();
-        LOG.info("Connection established.");
-
-        server.handleConnection(connection);
-
-      } catch (IOException ex) {
-        LOG.error(ex, "Failed to establish connection.");
-      }
-    }
+    final ExecutorService clientProcessingPool = Executors.newFixedThreadPool(10);
+    /**
+     * Handles new clients on the server side and does
+     * all its work for the client on a new thread.
+     */
+    Runnable acceptConnections = new Runnable() {
+    	
+    	@Override 
+    	public void run() {
+    		LOG.info("Established connection...");
+    		    ConnectionSource serverSourceCopy = null;
+    		    // The given serverSource returns an error when connected
+    		    // so a new one is initiated.
+    			try {
+    				serverSourceCopy = ServerConnectionSource.forPort(myPort);
+    			}
+    			catch (IOException ex) {
+    				 LOG.error(ex, "Failed to create server on port");
+    			}
+        		while (true) {
+    			try {
+    				final Connection connection = serverSourceCopy.connect();
+    				LOG.info("Handling a new client!");
+    				Runnable handleClients = new Runnable() {
+    					@Override
+    					public void run() {
+    						LOG.info("About to run a new client!");
+    						server.handleConnection(connection);
+    					}	
+    				};
+    				
+    				clientProcessingPool.submit(handleClients);
+    			}
+    			catch (IOException ex) {
+    				 LOG.error(ex, "Failed to establish connection.");
+    			}
+    		}
+    	}
+    };
+    
+    Thread cycleServer = new Thread(acceptConnections);
+    cycleServer.start();
   }
+
 }
