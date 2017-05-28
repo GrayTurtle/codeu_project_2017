@@ -37,8 +37,8 @@ standard Oracle version of [JAVA&nbsp;8](http://www.oracle.com/technetwork/java/
      the following two commands in separate shells:
 
        ```
-       $ sh run_server.sh <team_id> <team_secret> <port> <persistent-dir>
-       $ sh run_simple_gui_client.sh <host> <port>
+       $ sh run_server.sh <team_id> <team_secret> 2007 <persistent-dir>
+       $ sh run_simple_gui_client.sh
        ```
 
      You must specify the following startup arguments for `run_server.sh:
@@ -48,34 +48,23 @@ standard Oracle version of [JAVA&nbsp;8](http://www.oracle.com/technetwork/java/
        in hexadecimal format (using numbers `0-9` and letters in the range
        `A-F`) for `<team_secret>` when you launch the server in your local setup
        since it will not connect to the Relay server.
-     + `<port>`: the TCP port that your Server will listen on for connections
-       from the Client. You can use any value between 1024 and 65535, as long as
-       there is no other service currently listening on that port in your
-       system. The server will return an error:
+     + `2007`: the TCP port that your Server will listen on for connections
+       from the Client. It is only on port 2007 because it was hard coded in from 
+       the main repository. We are aware of this and decided to have the server only
+       be run on port 2007. If another process is running on port 2007, 
+       the server will return an error:
 
          ```
          java.net.BindException: Address already in use (Bind failed)
          ```
-
-       if the port is already in use.
      + `<persistent-dir>`: the path where you want the server to save data between
        runs.
-
-     The startup arguments for `run_client.sh` are the following:
-     + `<host>`: the hostname or IP address of the computer on which the server
-       is listening. If you are running server and client on the same computer,
-       you can use `localhost` here.
-     + `<port>`: the port on which your server is listening. Must be the same
-       port number you have specified when you launched `run_server.sh`.
 
 All running images write informational and exceptional events to log files.
 The default setting for log messages is "INFO". The logging is implemented 
 in `codeu.chat.util.Logger.java`, which is built on top of 
 `java.util.logging.Logger`, which you can refer to for more information.
 
-In addition to the client and server, this project also includes a
-Relay Server and a script that runs it (`run_relay.sh`).
-This is not needed to get started with the project.
 
 
 ## Finding your way around the project
