@@ -59,9 +59,7 @@ standard Oracle version of [JAVA&nbsp;8](http://www.oracle.com/technetwork/java/
          ```
 
        if the port is already in use.
-     + `<persistent-dir>`: the path where you want the server to save data between
-       runs.
-
+       
      The startup arguments for `run_client.sh` are the following:
      + `<host>`: the first argument. It is the hostname or IP address of the computer
        on which the server is listening. This version just uses the local computer,
