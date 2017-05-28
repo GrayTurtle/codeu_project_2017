@@ -25,6 +25,7 @@ import javafx.scene.text.TextFlow;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.Optional;
 
 /**
  * Created by Gabe on 5/19/17.
@@ -60,8 +61,8 @@ public class MainChatPage {
     private Text userName;
 
     public MainChatPage(ClientContext clientContext, View view) {
-    	
-    	
+
+
     	view.mainChatPage = this;
 
         MainChatPage.clientContext = clientContext;
@@ -84,12 +85,10 @@ public class MainChatPage {
 
         // button for sending a message
         Button sendButton = new Button("Send");
-        // button for updating the client
-        Button updateButton = new Button("Update");
         // button for adding conversation
-        Button addConvoButton = new Button("Add Conversation");
+        Button addConvoButton = new Button("Add Convo");
         // button for leaving conversation
-        Button leaveConvoButton = new Button("Leave Conversation");
+        Button leaveConvoButton = new Button("Leave Convo");
 
         Text userTitle = new Text("Users");
         // changed based on which is select
@@ -116,8 +115,6 @@ public class MainChatPage {
         conversations.setOnMouseClicked(e -> selectConversation(e));
         // add listener to the send button to send messages to the conversation
         sendButton.setOnAction(e -> sendMessage(e));
-        // add listener to the update button to update the gui
-        updateButton.setOnAction(e -> updateGUI(e));
 
         // set dimensions and add components
         VBox.setVgrow(users, Priority.ALWAYS);
@@ -128,13 +125,15 @@ public class MainChatPage {
         HBox.setHgrow(chatVBox, Priority.ALWAYS);
         HBox.setHgrow(convosVBox, Priority.ALWAYS);
         HBox.setHgrow(convosButtonBox, Priority.ALWAYS);
+        HBox.setHgrow(leaveConvoButton, Priority.ALWAYS);
+        HBox.setHgrow(addConvoButton, Priority.ALWAYS);
 
         sendButton.setMinHeight(BUTTON_MIN_HEIGHT);
-        updateButton.setMinHeight(BUTTON_MIN_HEIGHT);
         input.setMinHeight(BUTTON_MIN_HEIGHT);
         addConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
         leaveConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
         addConvoButton.setMaxWidth(Double.MAX_VALUE);
+        leaveConvoButton.setMaxWidth(Double.MAX_VALUE);
 
         userTf.setMaxWidth(Double.MAX_VALUE);
         userTf.setMinHeight(30);
@@ -146,7 +145,7 @@ public class MainChatPage {
         chatVBox.setMaxWidth(Double.MAX_VALUE);
         convosVBox.setMaxWidth(268);
 
-        hboxInput.getChildren().addAll(input, sendButton, updateButton);
+        hboxInput.getChildren().addAll(input, sendButton);
         userVBox.getChildren().addAll(userTf, users);
         chatVBox.getChildren().addAll(chatTf, messages, hboxInput);
         convosButtonBox.getChildren().addAll(leaveConvoButton, addConvoButton);
@@ -170,7 +169,7 @@ public class MainChatPage {
             dialog.setHeaderText("Create your conversation");
 
             // get input and add the name of the convo
-            String name;
+            String name = null;
             Optional<String> result = dialog.showAndWait();
 
             // Once the user has typed in a name
@@ -178,14 +177,12 @@ public class MainChatPage {
 
                 name = result.get();
                 Map<ConversationSummary, String> summariesSortedByCreationTime = clientContext.conversation.getSummariesByCreationTime();
-
-
+            }
             if (!name.isEmpty() && name.length() > 0) {
                 clientContext.conversation.startConversation(name, clientContext.user.getCurrent().id);
                 //convoList.add(name);
             }
-        }
-        else {
+        } else {
             // user is not signed in
             displayAlert("You're not signed in!");
         }
@@ -330,7 +327,7 @@ public class MainChatPage {
         for (final ConversationSummary conv : clientContext.conversation.getSummariesByCreationTime().keySet()) {
             convoList.add(conv.title);
         }
-        
+
     }
 
     /**
@@ -372,7 +369,7 @@ public class MainChatPage {
             }
         }
     }
-    
+
     /**
      * Updates GUI with a new user that has signed up
      * @param newUser
@@ -385,7 +382,7 @@ public class MainChatPage {
 	    	usersList.add(userName);
     	}
     }
-    
+
     /**
      *  Updates GUI with conversation sent by other active users
      * @param newConversation
@@ -394,7 +391,7 @@ public class MainChatPage {
     	System.out.println("Adding new conversation...");
     	convoList.add(newConversation.title);
     }
-    
+
     /**
      * Updates GUI with message sent by other active users
      * @param m
@@ -413,11 +410,8 @@ public class MainChatPage {
         messageList.add(displayStringFlow);
     }
 
-
-    // TODO: set up a loop to where this updates every half sec or so
     /**
-     * When the user presses the update button, update the GUI by clearing & and filling
-     * all the lists that will be displayed with updated content
+     * Updates the GUI by refilling the lists with updated content
      */
     private void updateGUI(ActionEvent e) {
         fillUserList(users);
@@ -433,11 +427,11 @@ public class MainChatPage {
      */
     private void colorizeUsername(Uuid userID) {
         int messageCount = clientContext.user.getMessageCount(userID);
-        if (messageCount >= 10 && messageCount < 20) {
+        if (messageCount >= 5 && messageCount < 10) {
             userName.setFill(Color.RED);
-        } else if (messageCount >= 20 && messageCount < 30) {
+        } else if (messageCount >= 10 && messageCount < 15) {
             userName.setFill(Color.BLUE);
-        } else if (messageCount >= 30 && messageCount < 40) {
+        } else if (messageCount >= 15 && messageCount < 20) {
             userName.setStyle("-fx-fill: linear-gradient(from 0% 0% to 100% 200%, repeat, aqua 0%, red 50%)");
         }
     }
@@ -458,6 +452,6 @@ public class MainChatPage {
         fillMessagesList(clientContext.conversation.getCurrent());
         fillConversationsList(conversations);
         fillUserList(users);
-  
+
     }
 }

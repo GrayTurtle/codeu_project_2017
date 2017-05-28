@@ -35,7 +35,7 @@ import codeu.chat.util.connections.ServerConnectionSource;
 final class ServerMain {
 
   private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
-  
+
   private static int myPort;
 
   public static void main(String[] args) {
@@ -50,8 +50,9 @@ final class ServerMain {
 
     LOG.info("============================= START OF LOG =============================");
 
-    myPort = Integer.parseInt(args[2]);
-    final byte[] secret = Secret.parse(args[1]);
+    myPort = Integer.parseInt(args[0]);
+    // This is "0" because we are not using secret team id's
+    final byte[] secret = Secret.parse("0");
 
     Uuid id = null;
     try {
@@ -60,10 +61,6 @@ final class ServerMain {
       System.out.println("Invalid id - shutting down server");
       System.exit(1);
     }
-
-    // This is the directory where it is safe to store data accross runs
-    // of the server.
-    final String persistentPath = args[3];
 
     final RemoteAddress relayAddress = args.length > 4 ?
                                        RemoteAddress.parse(args[4]) :
@@ -103,8 +100,8 @@ final class ServerMain {
      * all its work for the client on a new thread.
      */
     Runnable acceptConnections = new Runnable() {
-    	
-    	@Override 
+
+    	@Override
     	public void run() {
     		LOG.info("Established connection...");
     		    ConnectionSource serverSourceCopy = null;
@@ -125,9 +122,9 @@ final class ServerMain {
     					public void run() {
     						LOG.info("About to run a new client!");
     						server.handleConnection(connection);
-    					}	
+    					}
     				};
-    				
+
     				clientProcessingPool.submit(handleClients);
     			}
     			catch (IOException ex) {
@@ -136,7 +133,7 @@ final class ServerMain {
     		}
     	}
     };
-    
+
     Thread cycleServer = new Thread(acceptConnections);
     cycleServer.start();
   }
