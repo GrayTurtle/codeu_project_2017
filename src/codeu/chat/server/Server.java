@@ -15,8 +15,10 @@
 
 package codeu.chat.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -55,6 +57,13 @@ public final class Server {
 
   private final Relay relay;
   private Uuid lastSeen = Uuid.NULL;
+  
+  
+  // Post-processing Variables for Client and Server
+  private User newUser;
+  private Conversation newConversation;
+  private Message newMessage;
+  private Conversation parentConversation;
 
   public Server(final Uuid id, final byte[] secret, final Relay relay) {
 
@@ -87,32 +96,57 @@ public final class Server {
     });
   }
 
+  /**
+   * Handles any incoming information for a client and sends back
+   * information to them. If any new users, conversations, or clients
+   * are detected then it sends them to all connected clients.
+   * @param connection
+   */
   public void handleConnection(final Connection connection) {
-    timeline.scheduleNow(new Runnable() {
-      @Override
-      public void run() {
-        try {
-
-          LOG.info("Handling connection...");
-
-          final boolean success = onMessage(
-              connection.in(),
-              connection.out());
-
-          LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
-        } catch (Exception ex) {
-
-          LOG.error(ex, "Exception while handling connection.");
-
-        }
-
-        try {
-          connection.close();
-        } catch (Exception ex) {
-          LOG.error(ex, "Exception while closing connection.");
-        }
-      }
-    });
+	  try {
+	  BufferedReader in = new BufferedReader(new InputStreamReader(connection.in()));
+	  User prevUser = newUser;
+	  Conversation prevConversation = newConversation;
+	  Message prevMessage = newMessage;
+	  	while (true) {
+	  		if (in.ready()) {
+				LOG.info("Handling connection...");
+				
+				final boolean success = onMessage(connection.in(), connection.out());
+				LOG.info("Connection handled: %s", success ? "ACCEPTED" : "REJECTED");
+			    prevUser = newUser;	   
+			    prevMessage = newMessage;
+			    prevConversation = newConversation;
+	  		}
+	  		else {
+	  			   if (newUser != null && !newUser.equals(prevUser)) {
+	  				   Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_USER_RESPONSE);
+	  				   Serializers.nullable(User.SERIALIZER).write(connection.out(), newUser);
+	  				   newUser = null;
+	  			   }
+	  			   if (newConversation != null && !newConversation.equals(prevConversation)) {
+	  				   Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_CONVERSATION_RESPONSE);
+	  				   Serializers.nullable(Conversation.SERIALIZER).write(connection.out(), newConversation);
+	  				   newConversation = null;
+	  			   }
+	  			   if (newMessage != null && !newMessage.equals(prevMessage)) {
+	  				  Serializers.INTEGER.write(connection.out(), NetworkCode.NEW_MESSAGE_RESPONSE);
+	  				  Serializers.nullable(Message.SERIALIZER).write(connection.out(), newMessage); 
+	  				  Serializers.nullable(Conversation.SERIALIZER).write(connection.out(), parentConversation); 
+	  				  newMessage = null;
+	  			   }
+	  			   
+	  		}
+	  		Thread.sleep(10);
+	  	}
+	  }
+	  catch (IOException ex) {
+		  LOG.error("Error in creating buffer", ex);
+		  ex.printStackTrace();
+	  }
+	  catch (InterruptedException ex) {
+		  LOG.error("Thread could not sleep", ex);
+	  }
   }
 
   private boolean onMessage(InputStream in, OutputStream out) throws IOException {
@@ -124,16 +158,18 @@ public final class Server {
       final Uuid author = Uuid.SERIALIZER.read(in);
       final Uuid conversation = Uuid.SERIALIZER.read(in);
       final String content = Serializers.STRING.read(in);
+      parentConversation = Serializers.nullable(Conversation.SERIALIZER).read(in);
 
-      final Message message = controller.newMessage(author, conversation, content);
-
+      newMessage = controller.newMessage(author, conversation, content);
+      
       Serializers.INTEGER.write(out, NetworkCode.NEW_MESSAGE_RESPONSE);
-      Serializers.nullable(Message.SERIALIZER).write(out, message);
+      Serializers.nullable(Message.SERIALIZER).write(out, newMessage);
+      Serializers.nullable(Conversation.SERIALIZER).write(out, parentConversation);
 
       timeline.scheduleNow(createSendToRelayEvent(
           author,
           conversation,
-          message.id));
+          newMessage.id));
 
     } else if (type == NetworkCode.NEW_USER_REQUEST) {
 
@@ -142,20 +178,20 @@ public final class Server {
       // ADDED by Malik
       final String password = Serializers.STRING.read(in);
 
-      final User user = controller.newUser(name, password);
+      newUser = controller.newUser(name, password);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_USER_RESPONSE);
-      Serializers.nullable(User.SERIALIZER).write(out, user);
+      Serializers.nullable(User.SERIALIZER).write(out, newUser);
 
     } else if (type == NetworkCode.NEW_CONVERSATION_REQUEST) {
 
       final String title = Serializers.STRING.read(in);
       final Uuid owner = Uuid.SERIALIZER.read(in);
 
-      final Conversation conversation = controller.newConversation(title, owner);
+      newConversation = controller.newConversation(title, owner);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_CONVERSATION_RESPONSE);
-      Serializers.nullable(Conversation.SERIALIZER).write(out, conversation);
+      Serializers.nullable(Conversation.SERIALIZER).write(out, newConversation);
 
     } else if (type == NetworkCode.GET_USERS_BY_ID_REQUEST) {
 
@@ -263,6 +299,7 @@ public final class Server {
 
   	} else if (type == NetworkCode.GET_USER_MESSAGE_COUNT_REQUEST) {
   		final Uuid userid = Uuid.SERIALIZER.read(in);
+  		
   		
   		int messageCount = 0;
   		try {

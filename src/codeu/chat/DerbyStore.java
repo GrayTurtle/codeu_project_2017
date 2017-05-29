@@ -65,7 +65,6 @@ public class DerbyStore implements DerbyDatabaseInteractions {
 	private final String getMessageById = "SELECT * FROM " + messageTableName + " WHERE messageid = ?";
 	private final String getMessageCountById = "SELECT messageCount FROM " + userMessageCountTableName + " WHERE userid = ?";
 	
-	
 	private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
 	
 	/**

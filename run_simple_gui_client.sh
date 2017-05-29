@@ -14,8 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_MACHINE="localhost@2007"
+HOST="$1"
+PORT="$2"
+
+if [[ "$HOST" == "" || "$PORT" == "" ]] ; then
+  echo 'usage: <HOST> <PORT>'
+  echo ''
+  echo 'HOST:           In this version, HOST must be "localhost"'
+  echo 'PORT:           PORT must be the same port as run_server.sh'
+  echo '                run_server.sh must also be ran first'
+  echo ''
+  exit 1
+fi
 
 cd './bin'
-
-java codeu.chat.SimpleGuiClientMain "$LOCAL_MACHINE"
+java codeu.chat.SimpleGuiClientMain "$HOST@$PORT"

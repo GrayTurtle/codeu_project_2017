@@ -30,6 +30,10 @@ public final class ClientContext {
     user = new ClientUser(controller, view);
     conversation = new ClientConversation(controller, view, user);
     message = new ClientMessage(controller, view, user, conversation);
+    // Giving reference to the clientContext
+    // from the view to add information to 
+    // users, conversations, and messages
+    view.clientContext = this;
 	System.out.println(this.getClass().toString());
   }
 }

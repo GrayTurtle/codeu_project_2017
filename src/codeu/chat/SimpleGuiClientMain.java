@@ -22,6 +22,7 @@ import codeu.chat.client.View;
 import codeu.chat.util.Logger;
 import codeu.chat.util.RemoteAddress;
 import codeu.chat.util.connections.ClientConnectionSource;
+import codeu.chat.util.connections.Connection;
 import codeu.chat.util.connections.ConnectionSource;
 
 final class SimpleGuiClientMain {
@@ -44,33 +45,34 @@ final class SimpleGuiClientMain {
 
     final RemoteAddress address = RemoteAddress.parse(args[0]);
 
-    try (
-      final ConnectionSource source = new ClientConnectionSource(address.host, address.port)
-    ) {
-      final Controller controller = new Controller(source);
-      final View view = new View(source);
+		    try (
+		      final ConnectionSource source = new ClientConnectionSource(address.host, address.port)
+		    ) {
+		      // Creating one single connection for the entire
+		      // client session and sending that to both the controller
+		      // and view.
+		      Connection client = source.connect();
+		      final Controller controller = new Controller(client);
+		      final View view = new View(client);
 
-      LOG.info("Creating client...");
-      
+		      LOG.info("Creating client...");
 
-      runClient(controller, view, args);
 
-    } catch (Exception ex) {
-      System.out.println("ERROR: Exception setting up client. Check log for details.");
-      LOG.error(ex, "Exception setting up client.");
-    }
+		      runClient(controller, view, args);
+
+		    } catch (Exception ex) {
+		      System.out.println("ERROR: Exception setting up client. Check log for details.");
+		      LOG.error(ex, "Exception setting up client.");
+		    }
   }
 
   private static void runClient(Controller controller, View view, String [] args) {
-
-    //final ChatGuiFX chatGuiFX = new ChatGuiFX(controller, view);
 
     final ChatGuiFX chatGuiFX = new ChatGuiFX();
 
     LOG.info("Created client");
 
     chatGuiFX.launch(controller, view);
-    
 
     LOG.info("chat client is running.");
   }

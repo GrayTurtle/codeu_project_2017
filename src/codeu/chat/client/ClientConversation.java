@@ -14,10 +14,14 @@
 
 package codeu.chat.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -41,6 +45,8 @@ public final class ClientConversation {
 
   private final ClientUser userContext;
   private ClientMessage messageContext = null;
+  
+  private final Map<Uuid, Conversation> conversationsByUuid = new HashMap<>();
 
   // This is the set of conversations known to the server.
   private final Map<Uuid, ConversationSummary> summariesByUuid = new HashMap<>();
@@ -64,8 +70,8 @@ public final class ClientConversation {
   class sortByCreation implements Comparator<ConversationSummary> {
 	  @Override
 	  public int compare(ConversationSummary a, ConversationSummary b) {
-		  
 		  if (!Uuid.equals(a.lastMessage, Uuid.NULL) && !Uuid.equals(b.lastMessage, Uuid.NULL)) {
+			  
 			  Message messageA = view.getMessageById(a.lastMessage);
 			  Message messageB = view.getMessageById(b.lastMessage);
 			  if (messageA.creation.inMs() > messageB.creation.inMs()) return -1;
@@ -73,13 +79,9 @@ public final class ClientConversation {
 			  
 		  return 0;
 		  }
-		  else if (!Uuid.equals(a.lastMessage, Uuid.NULL)) return -1;
-		  else if (!Uuid.equals(b.lastMessage, Uuid.NULL)) return 1;
+		  if (!Uuid.equals(a.lastMessage, Uuid.NULL)) return -1;
+		  if (!Uuid.equals(b.lastMessage, Uuid.NULL)) return 1;
 		  
-		  /*if (a.creation.inMs() > b.creation.inMs()) return -1;
-		  else if (a.creation.inMs() < b.creation.inMs()) return 1;
-		  
-	  return 0;*/
 	  return 0;
 	  }
   }
@@ -140,13 +142,19 @@ public final class ClientConversation {
 	System.out.println(this.getClass().toString() + " startConversation()");
     final boolean validInputs = isValidTitle(title);
 
-    final Conversation conv = (validInputs) ? controller.newConversation(title, owner) : null;
+    final Conversation conv = (validInputs) ? view.newConversation(title, owner) : null;
 
     if (conv == null) {
       System.out.format("Error: conversation not created - %s.\n",
           (validInputs) ? "server failure" : "bad input value");
+      return;
     } else {
       LOG.info("New conversation: Title= \"%s\" UUID= %s", conv.title, conv.id);
+      
+      summariesByUuid.put(conv.summary.id, conv.summary);
+      summariesSortedByTitle.insert(conv.summary.title, conv.summary);
+      summariesSortedByCreationTime.put(conv.summary, conv.title);
+      conversationsByUuid.put(conv.id, conv);
 
       currentSummary = conv.summary;
 
@@ -170,10 +178,11 @@ public final class ClientConversation {
 
   // Get a single conversation from the server.
   public Conversation getConversation(Uuid conversationId) {
-	System.out.println(this.getClass().toString() + " getConversation()");
-    for (final Conversation c : view.getConversations(Arrays.asList(conversationId))) {
-      return c;
-    }
+	  // TODO: Could be optimized by saving conversations in memory
+	    for (final Conversation c : view.getConversations(Arrays.asList(conversationId))) {
+	    	return c;
+	    }
+	    
     return null;
   }
 
@@ -225,22 +234,38 @@ public final class ClientConversation {
   // If the input currentChanged is true, then re-establish the state of
   // the current Conversation, including its messages.
   public void updateAllConversations(boolean currentChanged) {
-	  System.out.println(this.getClass().toString() + " updateAllConversations()");
-    summariesByUuid.clear();
-    summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
-    
-    summariesSortedByCreationTime = new TreeMap<ConversationSummary, String>(new sortByCreation());
-
-    for (final ConversationSummary cs : view.getAllConversations()) {
-      summariesByUuid.put(cs.id, cs);
-      summariesSortedByTitle.insert(cs.title, cs);
-      summariesSortedByCreationTime.put(cs, cs.title);
-    }
-
-    if (currentChanged) {
-      updateCurrentConversation();
-      messageContext.resetCurrent(true);
-    }
+	System.out.println(this.getClass().toString() + " updateAllConversations()");
+	// TODO: Conversation summaries aren't updated with lastMessage of
+	// a conversation so removing if statement (if (summariesByUuid.size() == 0)) to allow re-order of conversations,
+	// but this should be optimized to lower the number of calls to the server.
+	// TODO: TAKE OUT CONVERSATION AND THEN PLACE IT BACK WHEN FINISHED
+	
+	    summariesByUuid.clear();
+	    summariesSortedByTitle = new Store<>(String.CASE_INSENSITIVE_ORDER);
+	    
+	    summariesSortedByCreationTime = new TreeMap<ConversationSummary, String>(new sortByCreation());
+	    
+	    for (final ConversationSummary cs : view.getAllConversations()) {
+	      summariesByUuid.put(cs.id, cs);
+	      summariesSortedByTitle.insert(cs.title, cs);
+	      summariesSortedByCreationTime.put(cs, cs.title);
+	    }
+	
+	
+	
+	if (currentChanged) {
+	    updateCurrentConversation();
+	    messageContext.resetCurrent(true);
+	 }
+  }
+  
+  public void updateConversation(Conversation convo) {
+	  if (!summariesByUuid.containsKey(convo.summary.id)) {
+		  summariesByUuid.put(convo.summary.id, convo.summary);
+	      summariesSortedByTitle.insert(convo.summary.title, convo.summary);
+	      summariesSortedByCreationTime.put(convo.summary, convo.summary.title);
+	      conversationsByUuid.put(convo.id, convo);
+	  }
   }
 
   // Print Conversation.  User context is used to map from owner UUID to name.
