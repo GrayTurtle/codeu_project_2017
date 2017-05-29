@@ -54,12 +54,12 @@ final class SimpleGuiClientMain {
 		      Connection client = source.connect();
 		      final Controller controller = new Controller(client);
 		      final View view = new View(client);
-		
+
 		      LOG.info("Creating client...");
-		      
-		
+
+
 		      runClient(controller, view, args);
-		
+
 		    } catch (Exception ex) {
 		      System.out.println("ERROR: Exception setting up client. Check log for details.");
 		      LOG.error(ex, "Exception setting up client.");
@@ -68,14 +68,12 @@ final class SimpleGuiClientMain {
 
   private static void runClient(Controller controller, View view, String [] args) {
 
-    //final ChatGuiFX chatGuiFX = new ChatGuiFX(controller, view);
-
     final ChatGuiFX chatGuiFX = new ChatGuiFX();
 
     LOG.info("Created client");
 
     chatGuiFX.launch(controller, view);
-    
+
     LOG.info("chat client is running.");
   }
 }
