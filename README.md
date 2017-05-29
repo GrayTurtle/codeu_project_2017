@@ -131,7 +131,7 @@ Some basic infrastructure classes used throughout the project.
 ![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/Chat.png)
 - Updated the client-side and server-side controllers to interface with new GUI and database
 - Integrated a DERBY local database to save chat information
-- Once users sign in again, the chat is saved
+- The chat is saved, and once users sign in it is the same as they had left it
 
 
 ## PLANNED CHANGES
