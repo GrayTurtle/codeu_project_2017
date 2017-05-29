@@ -119,7 +119,7 @@ Some basic infrastructure classes used throughout the project.
 
 - Swapped out the Java Swing client GUI with a JavaFX version
 - Created a sign-in screen seperate from the main chat
-
+![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/SignIn.png)
 - Updated the client-side and server-side controllers to interface with new GUI and database
 - Integrated a DERBY local database to save chat information
 - User's names are displayed in different colors depending on how many messages they've sent
