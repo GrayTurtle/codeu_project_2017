@@ -119,9 +119,25 @@ Some basic infrastructure classes used throughout the project.
 
 - Swapped out the Java Swing client GUI with a JavaFX version
 - Created a sign-in screen seperate from the main chat
+- Requires a password and checked against No-SQL injection
 ![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/SignIn.png)
+- Revamped the chat to be more user friendly
+- Chat updates automatically without the update button
+- Chat updates for other clients
+- The current user does not see themselves in the user list
+- Conversations reorder themselves based on most recent message sent
+- User's names are displayed in different colors depending on how many messages they've sent
+- 5 messages sent turns the user's name to red, 10 to blue, and 15 to gradient
+![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/Chat.png)
 - Updated the client-side and server-side controllers to interface with new GUI and database
 - Integrated a DERBY local database to save chat information
-- User's names are displayed in different colors depending on how many messages they've sent
+- Once users sign in again, the chat is saved
+
 
 ## PLANNED CHANGES
+
+- Implement leaving a conversations (we currently just have a button for it)
+- Make the client update faster by changing out the timer for something else
+- Add more colors for the names to change into
+- Make the client more vibrant wihh CSS styling
+- Add more gamification features such as hangman and leaderboards
