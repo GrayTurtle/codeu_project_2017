@@ -136,7 +136,7 @@ Some basic infrastructure classes used throughout the project.
 
 ## PLANNED CHANGES
 
-- Implement leaving a conversations (we currently just have a button for it)
+- Implement leaving a conversation (we currently just have a button for it)
 - Make the client update faster by changing out the timer for something else more efficient
 - Add more colors for the names to change into
 - Make the client more vibrant with CSS styling
