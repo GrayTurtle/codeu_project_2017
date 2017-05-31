@@ -77,8 +77,6 @@ public class MainChatPage {
         VBox chatVBox = new VBox();
         // holds the conversations
         VBox convosVBox = new VBox();
-        // holds buttons to interact with conversations
-        HBox convosButtonBox = new HBox();
 
         // contains the boxes
         BorderPane container = new BorderPane();
@@ -87,8 +85,6 @@ public class MainChatPage {
         Button sendButton = new Button("Send");
         // button for adding conversation
         Button addConvoButton = new Button("Add Convo");
-        // button for leaving conversation
-        Button leaveConvoButton = new Button("Leave Convo");
 
         Text userTitle = new Text("Users");
         // changed based on which is select
@@ -109,8 +105,6 @@ public class MainChatPage {
 
         // add listener for when user presses add conversation & add to the conversation list
         addConvoButton.setOnAction(e -> addConversation(e));
-        // add listener for when user wants to leave a conversation
-        leaveConvoButton.setOnAction(e -> leaveConversation(e));
         // add listener to the list of conversations to select a conversations
         conversations.setOnMouseClicked(e -> selectConversation(e));
         // add listener to the send button to send messages to the conversation
@@ -124,16 +118,12 @@ public class MainChatPage {
         HBox.setHgrow(userVBox, Priority.ALWAYS);
         HBox.setHgrow(chatVBox, Priority.ALWAYS);
         HBox.setHgrow(convosVBox, Priority.ALWAYS);
-        HBox.setHgrow(convosButtonBox, Priority.ALWAYS);
-        HBox.setHgrow(leaveConvoButton, Priority.ALWAYS);
         HBox.setHgrow(addConvoButton, Priority.ALWAYS);
 
         sendButton.setMinHeight(BUTTON_MIN_HEIGHT);
         input.setMinHeight(BUTTON_MIN_HEIGHT);
         addConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
-        leaveConvoButton.setMinHeight(BUTTON_MIN_HEIGHT);
         addConvoButton.setMaxWidth(Double.MAX_VALUE);
-        leaveConvoButton.setMaxWidth(Double.MAX_VALUE);
 
         userTf.setMaxWidth(Double.MAX_VALUE);
         userTf.setMinHeight(30);
@@ -148,8 +138,7 @@ public class MainChatPage {
         hboxInput.getChildren().addAll(input, sendButton);
         userVBox.getChildren().addAll(userTf, users);
         chatVBox.getChildren().addAll(chatTf, messages, hboxInput);
-        convosButtonBox.getChildren().addAll(leaveConvoButton, addConvoButton);
-        convosVBox.getChildren().addAll(convosTf, conversations, convosButtonBox);
+        convosVBox.getChildren().addAll(convosTf, conversations, addConvoButton);
         hboxClient.getChildren().addAll(userVBox, chatVBox, convosVBox);
         container.setCenter(hboxClient);
 
@@ -188,28 +177,6 @@ public class MainChatPage {
         }
     }
 
-    /**
-     * Confirms that the user wants to leave a particular conversation
-     * @param e
-     */
-    private void leaveConversation(ActionEvent e) {
-
-        //TODO: make sure user has actually selected a conversation first
-        // Pop up a dialog asking user if they really want to leave conversation
-        Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmationAlert.setTitle("Leave Conversation");
-        confirmationAlert.setHeaderText("Are you sure you want to leave this conversation?");
-        // Might be nice to specify which conversation they'd be leaving
-
-        Optional<ButtonType> result = confirmationAlert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            // TODO: leave conversation
-        }
-        else {
-            confirmationAlert.close();
-        }
-
-    }
 
     /**
      * When the user clicks on a conversation in the right panel, it gets its index and name to
