@@ -1,24 +1,14 @@
 
-# CODEU CHAT SERVER | README
-
-
-## DISCLAIMER
-
-CODEU is a program created by Google to develop the skills of future software
-engineers. This project is not an offical Google Product. This project is a
-playground for those looking to develop their coding and software engineering
-skills.
-
+## GameGab, a CodeU Chat Program | README
+## by Team 27: GameGab
 
 ## ENVIRONMENT
 
-All instructions here are relative to a LINUX environment. There will be some
-differences if you are working on a non-LINUX system. We will not support any
-other development environment.
+**YOU MUST HAVE Oracle Java 8! WITHOUT IT YOU CANNOT RUN THE PROGRAM BECAUSE IT USES JAVAFX!**
 
-This project was built using JAVA 8. It is recommended that you install the
-standard Oracle version of [JAVA&nbsp;8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)  when working with this project.
+**INSTALL IT HERE:** [ORACLE JAVA &nbsp;8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
+All instructions here are relative to a LINUX environment.
 
 ## GETTING STARTED
 
@@ -72,9 +62,32 @@ The default setting for log messages is "INFO". The logging is implemented
 in `codeu.chat.util.Logger.java`, which is built on top of
 `java.util.logging.Logger`, which you can refer to for more information.
 
-In addition to the client and server, this project also includes a
-Relay Server and a script that runs it (`run_relay.sh`).
-This is not needed to get started with the project.
+## OUR CHANGES & NEW FEATURES (Team 27: GameGab Team)
+
+- Swapped out the Java Swing client GUI with a JavaFX version
+- Created a sign-in screen seperate from the main chat
+- Requires a password and checked against No-SQL injection & invalid characters
+![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/SignIn.png)
+- Revamped the chat to be more user friendly
+- Chat updates automatically without the update button
+- Chat updates for other clients
+- The current user does not see themselves in the user list
+- Conversations reorder themselves based on most recent message sent
+- User's names are displayed in different colors depending on how many messages they've sent
+- 5 messages sent turns the user's name to red, 10 to blue, and 15 to gradient
+![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/Chat.png)
+- Updated the client-side and server-side controllers to interface with new GUI and database
+- Integrated a DERBY local database to save chat information
+- The chat is saved, and once users sign in it is the same as they had left it
+
+
+## PLANNED CHANGES
+
+- Implement leaving a conversation (we currently just have a button for it)
+- Make the client update faster by changing out the timer for something else more efficient
+- Add more colors for the names to change into
+- Make the client more vibrant with CSS styling
+- Add more gamification features such as hangman and leaderboards
 
 ## Finding your way around the project
 
@@ -114,30 +127,3 @@ Classes that are shared by the clients and servers.
 ### codeu.chat.util
 
 Some basic infrastructure classes used throughout the project.
-
-## OUR CHANGES & NEW FEATURES (Team 27)
-
-- Swapped out the Java Swing client GUI with a JavaFX version
-- Created a sign-in screen seperate from the main chat
-- Requires a password and checked against No-SQL injection & invalid characters
-![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/SignIn.png)
-- Revamped the chat to be more user friendly
-- Chat updates automatically without the update button
-- Chat updates for other clients
-- The current user does not see themselves in the user list
-- Conversations reorder themselves based on most recent message sent
-- User's names are displayed in different colors depending on how many messages they've sent
-- 5 messages sent turns the user's name to red, 10 to blue, and 15 to gradient
-![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/Chat.png)
-- Updated the client-side and server-side controllers to interface with new GUI and database
-- Integrated a DERBY local database to save chat information
-- The chat is saved, and once users sign in it is the same as they had left it
-
-
-## PLANNED CHANGES
-
-- Implement leaving a conversation (we currently just have a button for it)
-- Make the client update faster by changing out the timer for something else more efficient
-- Add more colors for the names to change into
-- Make the client more vibrant with CSS styling
-- Add more gamification features such as hangman and leaderboards
