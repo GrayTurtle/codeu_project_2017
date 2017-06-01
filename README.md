@@ -1,9 +1,7 @@
 
-## GameGab, a CodeU Chat Program | README
-## by Team 27: GameGab
+## GameGab, a CodeU Chat Program by GameGab Team(Team 27) | README
 
 ## ENVIRONMENT
-
 **YOU MUST HAVE Oracle Java 8! WITHOUT IT YOU CANNOT RUN THE PROGRAM BECAUSE IT USES JAVAFX!**
 
 **INSTALL IT HERE:** [ORACLE JAVA &nbsp;8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
