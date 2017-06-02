@@ -64,7 +64,7 @@ in `codeu.chat.util.Logger.java`, which is built on top of
 
 - Swapped out the Java Swing client GUI with a JavaFX version
 - Created a sign-in screen seperate from the main chat
-- Requires a password and checked against No-SQL injection & invalid characters
+- Requires a password that is checked to make sure it has no SQL injection and only alphanumeric characters
 ![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/develop/images/SignIn.png)
 - Revamped the chat to be more user friendly
 - Chat updates automatically without the update button
