@@ -88,6 +88,25 @@ in `codeu.chat.util.Logger.java`, which is built on top of
 - Make the client more vibrant with CSS styling
 - Add more gamification features such as hangman and leaderboards
 
+## REFACTORINGS
+
+- We seperated ChatGuiFX.java into MainChatPage.java and SignInPage.java. It was done because ChatGuiFX.java started to become cluttered with elements from the sign in and the main chat. The pros are that we have better organized code and we can find the elements of the main chat and the sign in quicker. The cons are that we have more files to deal with; therefore, more space.
+
+## BUG FIXES
+- Symptom: Duplicate conversation names
+  - Diagnosis: Users can make two different conversations with the same name; nothing was stopping them from doing so
+  - Cure: Added a condition where if the new conversation's name is the same as another conversation's in the list, display an error  and prevent them from making the conversation (pull request #15)
+- Symptom: Users were able to get past the sign in screen without signing in
+  - Diagnosis: There was nothing preventing them from getting to the main chat
+  - Cure: Added a conditional where if the user is not signed in, don't change the screen (pull request #14)
+- Symptom: User's uuid gets displayed instead of username
+  - Diagnosis: Not writing out the password to the database 
+  - Cure: Added code to write out the password in User.java (pull request #13)
+- Symptom: Invalid characters still went through even though Regex was implemented
+  - Diagnosis: Regex syntax error
+  - Cure: "[a-zA-Z0-9]" was changed to "[a-zA-Z0-9]+" (pull request #12)
+
+
 ## Finding your way around the project
 
 All the source files (except test-related source files) are in
