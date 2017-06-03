@@ -6,6 +6,8 @@
 
 **INSTALL IT HERE:** [ORACLE JAVA &nbsp;8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
+**Also make sure you're on the master branch**
+
 All instructions here are relative to a LINUX environment.
 
 ## GETTING STARTED
