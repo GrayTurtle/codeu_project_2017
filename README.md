@@ -84,7 +84,6 @@ in `codeu.chat.util.Logger.java`, which is built on top of
 ## PLANNED CHANGES
 
 - Implement leaving a conversation (we currently just have a button for it)
-- Make the client update faster by changing out the timer for something else more efficient
 - Add more colors for the names to change into
 - Make the client more vibrant with CSS styling
 - Add more gamification features such as hangman and leaderboards
