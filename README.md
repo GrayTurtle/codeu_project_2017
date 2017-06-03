@@ -93,9 +93,6 @@ in `codeu.chat.util.Logger.java`, which is built on top of
 - We seperated ChatGuiFX.java into MainChatPage.java and SignInPage.java. It was done because ChatGuiFX.java started to become cluttered with elements from the sign in and the main chat. The pros are that we have better organized code and we can find the elements of the main chat and the sign in quicker. The cons are that we have more files to deal with; therefore, more space.
 
 ## BUG FIXES
-- Symptom: Duplicate conversation names
-  - Diagnosis: Users can make two different conversations with the same name; nothing was stopping them from doing so
-  - Cure: Added a condition where if the new conversation's name is the same as another conversation's in the list, display an error  and prevent them from making the conversation (pull request #15)
 - Symptom: Users were able to get past the sign in screen without signing in
   - Diagnosis: There was nothing preventing them from getting to the main chat
   - Cure: Added a conditional where if the user is not signed in, don't change the screen (pull request #14)
