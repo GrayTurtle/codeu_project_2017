@@ -1,5 +1,6 @@
 
 ## GameGab, a CodeU Chat Program by GameGab Team(Team 27) | README
+![alt text](https://raw.githubusercontent.com/GrayTurtle/codeu_project_2017/master/images/Attach2439_20170814_130220.jpg)
 
 ## ENVIRONMENT
 **YOU MUST HAVE Oracle Java 8! WITHOUT IT YOU CANNOT RUN THE PROGRAM BECAUSE IT USES JAVAFX!**
